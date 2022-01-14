@@ -1,3 +1,5 @@
+// based on tutorial by Chess Programming @ youtube (https://www.youtube.com/playlist?list=PLmN0neTso3JzhJP35hwPHJi4FZgw5Ior0)
+
 #include <iostream>
 #include <string>
 #include <map>
