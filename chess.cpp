@@ -38,6 +38,9 @@ enum squares : int {
 // 1111       both sides an castle both directions
 // 1001       black king => queen side
 //            white king => king side
+// 1111 & 0001 = 1 (not 0)
+// 0000 & 0001 = 0 
+// if (castle & Kc)... for example
 enum castling { Kc = 1, Qc = 2, kc = 4, qc = 8};
 
 enum sides { white, black };
@@ -399,10 +402,11 @@ void generate_moves() {
     for (int square = 0; square < 128; square++) {
         // is square on board
         if (!(square & 0x88)) {
-            // white pawn and castling moves
+            // white moves
             if (side == white) {
-                // quiet pawn moves
+                // white pawn and castling moves
                 if (board[square] == P) {
+                    // promotions and quiet moves
                     int to_square = square - 16;
                     // check if target square is on board and is empty
                     if (!(to_square & 0x88) && board[to_square] == e) {
@@ -427,11 +431,68 @@ void generate_moves() {
                         }
                         
                     }
+
+                    // pawn captures
+                    for (int offset : bishop_offsets) {
+                        // white pawn offsets
+                        if (offset < 0) {
+                            // init target square
+                            int to_square = square + offset;
+
+                            // is on board and to_square 
+                            if (!(to_square & 0x88)) {
+                                // has enemy piece
+                                if (board[to_square] >= p && board[to_square] <= k) {
+                                    // promotion capture
+                                    // is pawn on 7th rank 
+                                    if (square >= a7 && square <= h7) {
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                                    }
+                                    // normal capture
+                                    else {
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                                    }
+                                }
+                                // en passant
+                                if (to_square == enpassant) {
+                                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // white castling
+                if (board[square] == K) {
+                    // king side castle
+                    if (castle & Kc) {
+                        // ensure empty squares between king and rook
+                        if (board[f1] == e && board[g1] == e) {
+                            // ensure king and next square not attacked (move gen will not allow g1 to be in check)
+                            if (!is_square_attacked(square, black) && !is_square_attacked(f1, black)) {
+                                cout << square_to_coord[e1] << square_to_coord[g1] << endl;
+                            }
+                        }
+                    }
+
+                    // queen side castle
+                    if (castle & Qc) {
+                        // ensure empty squares between king and rook
+                        if (board[d1] == e && board[c1] == e && board[b1] == e) {
+                            // ensure king and next square not attacked (move gen will not allow c1 to be in check)
+                            if (!is_square_attacked(square, black) && !is_square_attacked(d1, black)) {
+                                cout << square_to_coord[e1] << square_to_coord[c1] << endl;
+                            }
+                        }
+                    }
                 }
             } 
-            // black pawn and castling moves
+            // black moves
             else {
-                // quiet pawn moves
+                // black pawn and castling moves
                 if (board[square] == p) {
                     int to_square = square + 16;
                     // check if target square is on board and is empty
@@ -457,21 +518,79 @@ void generate_moves() {
                         }
                         
                     }
+
+                    // pawn captures
+                    for (int offset : bishop_offsets) {
+                        // white pawn offsets
+                        if (offset > 0) {
+                            // init target square
+                            int to_square = square + offset;
+
+                            // is on board and to_square
+                            if (!(to_square & 0x88)) {
+                                // has enemy piece
+                                if (board[to_square] >= P && board[to_square] <= K) {
+                                    // promotion capture
+                                    // is pawn on 2nd rank 
+                                    if (square >= a2 && square <= h2) {
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                                    }
+                                    // normal capture
+                                    else {
+                                        cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                                    }
+                                }
+                                // en passant
+                                if (to_square == enpassant) {
+                                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // black
+                if (board[square] == k) {
+                    // king side castle
+                    if (castle & kc) {
+                        // ensure empty squares between king and rook
+                        if (board[f8] == e && board[g8] == e) {
+                            // ensure king and next square not attacked (move gen will not allow g1 to be in check)
+                            if (!is_square_attacked(square, white) && !is_square_attacked(f8, white)) {
+                                cout << square_to_coord[e8] << square_to_coord[g8] << endl;
+                            }
+                        }
+                    }
+
+                    // queen side castle
+                    if (castle & qc) {
+                        // ensure empty squares between king and rook
+                        if (board[d8] == e && board[c8] == e && board[b8] == e) {
+                            // ensure king and next square not attacked (move gen will not allow c1 to be in check)
+                            if (!is_square_attacked(square, white) && !is_square_attacked(d8, white)) {
+                                cout << square_to_coord[e8] << square_to_coord[c8] << endl;
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-    
 }
 
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    parse_fen("8/3p4/2p5/2p5/8/8/p7/8 b KQkq - 0 1");
+    parse_fen("r3k2r/4P3/8/8/8/8/8/8 b KQkq b3 0 1");
     print_board();
     print_board_stats();
     //print_attacks(white);
     generate_moves();
     //cout << a2 << "-" << h2 << endl;
+
+    //cout << (0b0000 & Kc) << endl;
 
 }
