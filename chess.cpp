@@ -110,7 +110,7 @@ int king_offsets[] = { -17, -16, -15, -1, 1, 15, 16, 17 };
 // functions //
 ///////////////
 
-
+// is given square attacked by given side
 int is_square_attacked(int square, int side) {
 
     // pawn attacks
@@ -396,183 +396,123 @@ void print_board_stats() {
 
 }
 
-// move generator
-void generate_moves() {
-    // loop over all squares of the board
-    for (int square = 0; square < 128; square++) {
-        // is square on board
-        if (!(square & 0x88)) {
-            // white moves
-            if (side == white) {
-                // white pawn and castling moves
-                if (board[square] == P) {
-                    // promotions and quiet moves
-                    int to_square = square - 16;
-                    // check if target square is on board and is empty
-                    if (!(to_square & 0x88) && board[to_square] == e) {
-                        // pawn promotions
-                        // is pawn on 7th rank
-                        if (square >= a7 && square <= h7) {
-                            cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
-                            cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
-                            cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
-                            cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+// generate pawn moves for given side from square
+void generate_pawn_moves(int side, int square) {
+    if (side == white) {
+        // white pawn and castling moves
+        if (board[square] == P) {
+            // promotions and quiet moves
+            int to_square = square - 16;
+            // check if target square is on board and is empty
+            if (!(to_square & 0x88) && board[to_square] == e) {
+                // pawn promotions
+                // is pawn on 7th rank
+                if (square >= a7 && square <= h7) {
+                    cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                    cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                    cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                    cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                }
+                else {
+                    // one square ahead pawn move
+                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+
+                    // two squares ahead
+                    // pawn is in second rand and target square is empty
+                    if ((square >= a2 && square <= h2) && board[square - 32] == e) {
+                        cout << square_to_coord[square] << square_to_coord[square - 32] << endl;
+                    }
+                }
+            }
+
+            // pawn captures
+            for (int offset : bishop_offsets) {
+                // white pawn offsets
+                if (offset < 0) {
+                    // init target square
+                    int to_square = square + offset;
+
+                    // is on board and to_square 
+                    if (!(to_square & 0x88)) {
+                        // has enemy piece
+                        if (board[to_square] >= p && board[to_square] <= k) {
+                            // promotion capture
+                            // is pawn on 7th rank 
+                            if (square >= a7 && square <= h7) {
+                                cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                                cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                                cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                                cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                            }
+                            // normal capture
+                            else {
+                                cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                            }
                         }
-                        else {
-                            // one square ahead pawn move
+                        // en passant
+                        if (to_square == enpassant) {
                             cout << square_to_coord[square] << square_to_coord[to_square] << endl;
-
-                            // two squares ahead
-                            // pawn is in second rand and target square is empty
-                            if ((square >= a2 && square <= h2) && board[square - 32] == e) {
-                                cout << square_to_coord[square] << square_to_coord[square - 32] << endl;
-                            }
-                            
-                        }
-                        
-                    }
-
-                    // pawn captures
-                    for (int offset : bishop_offsets) {
-                        // white pawn offsets
-                        if (offset < 0) {
-                            // init target square
-                            int to_square = square + offset;
-
-                            // is on board and to_square 
-                            if (!(to_square & 0x88)) {
-                                // has enemy piece
-                                if (board[to_square] >= p && board[to_square] <= k) {
-                                    // promotion capture
-                                    // is pawn on 7th rank 
-                                    if (square >= a7 && square <= h7) {
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
-                                    }
-                                    // normal capture
-                                    else {
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << endl;
-                                    }
-                                }
-                                // en passant
-                                if (to_square == enpassant) {
-                                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
-                                }
-                            }
                         }
                     }
                 }
-
-                // white castling
-                if (board[square] == K) {
-                    // king side castle
-                    if (castle & Kc) {
-                        // ensure empty squares between king and rook
-                        if (board[f1] == e && board[g1] == e) {
-                            // ensure king and next square not attacked (move gen will not allow g1 to be in check)
-                            if (!is_square_attacked(square, black) && !is_square_attacked(f1, black)) {
-                                cout << square_to_coord[e1] << square_to_coord[g1] << endl;
-                            }
-                        }
-                    }
-
-                    // queen side castle
-                    if (castle & Qc) {
-                        // ensure empty squares between king and rook
-                        if (board[d1] == e && board[c1] == e && board[b1] == e) {
-                            // ensure king and next square not attacked (move gen will not allow c1 to be in check)
-                            if (!is_square_attacked(square, black) && !is_square_attacked(d1, black)) {
-                                cout << square_to_coord[e1] << square_to_coord[c1] << endl;
-                            }
-                        }
-                    }
+            }
+        }    
+    }
+    else {
+        // black pawn and castling moves
+        if (board[square] == p) {
+            int to_square = square + 16;
+            // check if target square is on board and is empty
+            if (!(to_square & 0x88) && board[to_square] == e) {
+                // pawn promotions
+                // is pawn on 2nd rank
+                if (square >= a2 && square <= h2) {
+                    cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                    cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                    cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                    cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
                 }
-            } 
-            // black moves
-            else {
-                // black pawn and castling moves
-                if (board[square] == p) {
-                    int to_square = square + 16;
-                    // check if target square is on board and is empty
-                    if (!(to_square & 0x88) && board[to_square] == e) {
-                        // pawn promotions
-                        // is pawn on 2nd rank
-                        if (square >= a2 && square <= h2) {
-                            cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
-                            cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
-                            cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
-                            cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                else {
+                    // one square ahead pawn move
+                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+
+                    // two squares ahead
+                    // pawn is in 7th rand and target square is empty
+                    if ((square >= a7 && square <= h7) && board[square + 32] == e) {
+                        cout << square_to_coord[square] << square_to_coord[square + 32] << endl;
+                    }
+                    
+                }
+                
+            }
+
+            // pawn captures
+            for (int offset : bishop_offsets) {
+                // white pawn offsets
+                if (offset > 0) {
+                    // init target square
+                    int to_square = square + offset;
+
+                    // is on board and to_square
+                    if (!(to_square & 0x88)) {
+                        // has enemy piece
+                        if (board[to_square] >= P && board[to_square] <= K) {
+                            // promotion capture
+                            // is pawn on 2nd rank 
+                            if (square >= a2 && square <= h2) {
+                                cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                                cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                                cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                                cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                            }
+                            // normal capture
+                            else {
+                                cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                            }
                         }
-                        else {
-                            // one square ahead pawn move
+                        // en passant
+                        if (to_square == enpassant) {
                             cout << square_to_coord[square] << square_to_coord[to_square] << endl;
-
-                            // two squares ahead
-                            // pawn is in 7th rand and target square is empty
-                            if ((square >= a7 && square <= h7) && board[square + 32] == e) {
-                                cout << square_to_coord[square] << square_to_coord[square + 32] << endl;
-                            }
-                            
-                        }
-                        
-                    }
-
-                    // pawn captures
-                    for (int offset : bishop_offsets) {
-                        // white pawn offsets
-                        if (offset > 0) {
-                            // init target square
-                            int to_square = square + offset;
-
-                            // is on board and to_square
-                            if (!(to_square & 0x88)) {
-                                // has enemy piece
-                                if (board[to_square] >= P && board[to_square] <= K) {
-                                    // promotion capture
-                                    // is pawn on 2nd rank 
-                                    if (square >= a2 && square <= h2) {
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
-                                    }
-                                    // normal capture
-                                    else {
-                                        cout << square_to_coord[square] << square_to_coord[to_square] << endl;
-                                    }
-                                }
-                                // en passant
-                                if (to_square == enpassant) {
-                                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // black
-                if (board[square] == k) {
-                    // king side castle
-                    if (castle & kc) {
-                        // ensure empty squares between king and rook
-                        if (board[f8] == e && board[g8] == e) {
-                            // ensure king and next square not attacked (move gen will not allow g1 to be in check)
-                            if (!is_square_attacked(square, white) && !is_square_attacked(f8, white)) {
-                                cout << square_to_coord[e8] << square_to_coord[g8] << endl;
-                            }
-                        }
-                    }
-
-                    // queen side castle
-                    if (castle & qc) {
-                        // ensure empty squares between king and rook
-                        if (board[d8] == e && board[c8] == e && board[b8] == e) {
-                            // ensure king and next square not attacked (move gen will not allow c1 to be in check)
-                            if (!is_square_attacked(square, white) && !is_square_attacked(d8, white)) {
-                                cout << square_to_coord[e8] << square_to_coord[c8] << endl;
-                            }
                         }
                     }
                 }
@@ -581,10 +521,78 @@ void generate_moves() {
     }
 }
 
+// generate pawn moves for given side from square
+void generate_castling_moves(int side, int square) {
+    if (side == white) {
+        // white castling
+        if (board[square] == K) {
+            // king side castle
+            if (castle & Kc) {
+                // ensure empty squares between king and rook
+                if (board[f1] == e && board[g1] == e) {
+                    // ensure king and next square not attacked (move gen will not allow g1 to be in check)
+                    if (!is_square_attacked(square, black) && !is_square_attacked(f1, black)) {
+                        cout << square_to_coord[e1] << square_to_coord[g1] << endl;
+                    }
+                }
+            }
+
+            // queen side castle
+            if (castle & Qc) {
+                // ensure empty squares between king and rook
+                if (board[d1] == e && board[c1] == e && board[b1] == e) {
+                    // ensure king and next square not attacked (move gen will not allow c1 to be in check)
+                    if (!is_square_attacked(square, black) && !is_square_attacked(d1, black)) {
+                        cout << square_to_coord[e1] << square_to_coord[c1] << endl;
+                    }
+                }
+            }
+        }
+    }
+    else {
+        // black castling
+        if (board[square] == k) {
+            // king side castle
+            if (castle & kc) {
+                // ensure empty squares between king and rook
+                if (board[f8] == e && board[g8] == e) {
+                    // ensure king and next square not attacked (move gen will not allow g1 to be in check)
+                    if (!is_square_attacked(square, white) && !is_square_attacked(f8, white)) {
+                        cout << square_to_coord[e8] << square_to_coord[g8] << endl;
+                    }
+                }
+            }
+
+            // queen side castle
+            if (castle & qc) {
+                // ensure empty squares between king and rook
+                if (board[d8] == e && board[c8] == e && board[b8] == e) {
+                    // ensure king and next square not attacked (move gen will not allow c1 to be in check)
+                    if (!is_square_attacked(square, white) && !is_square_attacked(d8, white)) {
+                        cout << square_to_coord[e8] << square_to_coord[c8] << endl;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// move generator
+void generate_moves() {
+    // loop over all squares of the board
+    for (int square = 0; square < 128; square++) {
+        // is square on board
+        if (!(square & 0x88)) {
+            generate_pawn_moves(side, square);
+            generate_castling_moves(side, square);
+        }
+    }
+}
+
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    parse_fen("r3k2r/4P3/8/8/8/8/8/8 b KQkq b3 0 1");
+    parse_fen("r3k2r/8/8/8/8/8/8/8 b KQkq b3 0 1");
     print_board();
     print_board_stats();
     //print_attacks(white);
