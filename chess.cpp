@@ -105,6 +105,11 @@ int bishop_offsets[] = { -17, -15, 15, 17 };
 int rook_offsets[] = { -16, -1, 1, 16 };
 int king_offsets[] = { -17, -16, -15, -1, 1, 15, 16, 17 };
 
+struct movelist
+{
+    int moves[256];
+    int count;
+};
 
 ///////////////
 // functions //
@@ -780,6 +785,14 @@ void generate_moves() {
     }
 }
 
+// populate move list
+void add_move(movelist *movelist, int move) {
+    // add move to the move list
+    movelist->moves[movelist->count] = move;
+    // increment move count
+    movelist->count++;
+}
+
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
@@ -793,16 +806,21 @@ int main() {
 
     //cout << (0b0000 & Kc) << endl;
 
-    int move = encode_move(e2, e4, n, 0, 1, 0, 1);
+    int move1 = encode_move(e2, e4, 0, 1, 0, 0, 0);
+    int move2 = encode_move(e7, e5, 0, 1, 0, 0, 0);
 
-    cout << move << endl;
 
-    cout << square_to_coord[decode_source(move)] << endl;
-    cout << square_to_coord[decode_target(move)] << endl;
-    cout << decode_promotion(move) << endl;
-    cout << decode_capture(move) << endl;
-    cout << decode_double_pawn(move) << endl;
-    cout << decode_enpassant(move) << endl;
-    cout << decode_castling(move) << endl;    
+    //cout << move << endl;
+
+    movelist moves;
+    moves.count = 0;
+
+    add_move(&moves, move1); 
+    add_move(&moves, move2);
+
+    for (int i; i < moves.count; i++) {
+        cout << square_to_coord[decode_source(moves.moves[i])];
+        cout << square_to_coord[decode_target(moves.moves[i])] << endl;
+    }
 
 }
