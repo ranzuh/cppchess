@@ -577,6 +577,134 @@ void generate_castling_moves(int side, int square) {
     }
 }
 
+// generate knight moves
+void generate_knight_moves(int side, int square) {
+    if (side == white ? board[square] == N : board[square] == n) {
+        for (int offset : knight_offsets) {
+            // init target square
+            int to_square = square + offset;
+            // init target piece
+            int piece = board[to_square];
+
+            // ensure target square on board
+            if (!(to_square & 0x88)) {
+                // ensure that target square is empty or has enemy piece
+                if (side == white ? (piece == e || (piece >= p && piece <= k)) : (piece == e || (piece >= P && piece <= K))) {
+                    // here you could differentiate between captures and quiet moves
+                    // eg.
+                    // if (piece != e)
+                    // else
+                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                }
+            }
+        }
+    }
+}
+
+// generate king moves
+void generate_king_moves(int side, int square) {
+    if (side == white ? board[square] == K : board[square] == k) {
+        for (int offset : king_offsets) {
+            // init target square
+            int to_square = square + offset;
+            // init target piece
+            int piece = board[to_square];
+
+            // ensure target square on board
+            if (!(to_square & 0x88)) {
+                // ensure that target square is empty or has enemy piece
+                if (side == white ? (piece == e || (piece >= p && piece <= k)) : (piece == e || (piece >= P && piece <= K))) {
+                    // here you could differentiate between captures and quiet moves
+                    // eg.
+                    // if (piece != e)
+                    // else
+                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                }
+            }
+        }
+    }
+}
+
+// generate bishop moves
+void generate_bishop_moves(int side, int square) {
+    // correct color bishop or queen
+    if (side == white ? board[square] == B || board[square] == Q : 
+        board[square] == b || board[square] == q) {
+        
+        for (int offset : bishop_offsets) {
+            // init target square
+            int to_square = square + offset;
+
+            // loop over attack ray
+            while (!(to_square & 0x88)) {
+                int piece = board[to_square];
+                
+                // hits own piece
+                if (side == white ? piece >= P && piece <= K :
+                    piece >= p && piece <= k) {
+                    break;
+                }
+
+                // hits enemy piece
+                if (side == white ? piece >= p && piece <= k :
+                    piece >= P && piece <= K) {
+                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    break;
+
+                }
+                // hits empty square
+                if (piece == e) {
+                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                }
+
+                // increment target square
+                to_square += offset;
+            }
+        }
+    }
+}
+
+// generate rook moves
+void generate_rook_moves(int side, int square) {
+    // correct color rook or queen
+    if (side == white ? board[square] == R || board[square] == Q : 
+        board[square] == r || board[square] == q) {
+        
+        for (int offset : rook_offsets) {
+            // init target square
+            int to_square = square + offset;
+
+            // loop over attack ray
+            while (!(to_square & 0x88)) {
+                int piece = board[to_square];
+                
+                // hits own piece
+                if (side == white ? piece >= P && piece <= K :
+                    piece >= p && piece <= k) {
+                    break;
+                }
+
+                // hits enemy piece
+                if (side == white ? piece >= p && piece <= k :
+                    piece >= P && piece <= K) {
+                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    break;
+
+                }
+                // hits empty square
+                if (piece == e) {
+                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                }
+
+                // increment target square
+                to_square += offset;
+            }
+        }
+    }
+}
+// generate queen moves
+
+
 // move generator
 void generate_moves() {
     // loop over all squares of the board
@@ -585,6 +713,10 @@ void generate_moves() {
         if (!(square & 0x88)) {
             generate_pawn_moves(side, square);
             generate_castling_moves(side, square);
+            generate_knight_moves(side, square);
+            generate_king_moves(side, square);
+            generate_bishop_moves(side, square);
+            generate_rook_moves(side, square);
         }
     }
 }
@@ -592,7 +724,8 @@ void generate_moves() {
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    parse_fen("r3k2r/8/8/8/8/8/8/8 b KQkq b3 0 1");
+    //parse_fen("8/8/2PPP3/2PQP3/2PPP3/8/8/8 w ---- b3 0 1");
+    parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
     print_board();
     print_board_stats();
     //print_attacks(white);
