@@ -271,6 +271,7 @@ void print_attacks(int side) {
     cout << endl << "    a b c d e f g h" << endl << endl;;
 }
 
+// empties the board
 void reset_board() {
     for (int rank = 0; rank < 8; rank++) {
         for (int file = 0; file < 16; file++) {
@@ -285,6 +286,7 @@ void reset_board() {
     }
 }
 
+// parses fen string and sets it to board
 void parse_fen(string fen) {
     reset_board();
     int i = 0;
@@ -295,7 +297,7 @@ void parse_fen(string fen) {
 
             if (!(square & 0x88)) {
                 // match characters
-                if (fen[i] > 'a' && fen[i] < 'z' || fen[i] > 'A' && fen[i] < 'Z') {
+                if ((fen[i] > 'a' && fen[i] < 'z') || (fen[i] > 'A' && fen[i] < 'Z')) {
 
                     // set piece
                     board[square] = char_pieces[fen[i]];
@@ -379,6 +381,7 @@ void parse_fen(string fen) {
     }
 }
 
+// print board status infos
 void print_board_stats() {
     cout << "    Side to move:    " << (side == white ? "white" : "black") << endl;
     cout << "    Castling rights: ";
@@ -390,12 +393,85 @@ void print_board_stats() {
 
 }
 
+// move generator
+void generate_moves() {
+    // loop over all squares of the board
+    for (int square = 0; square < 128; square++) {
+        // is square on board
+        if (!(square & 0x88)) {
+            // white pawn and castling moves
+            if (side == white) {
+                // quiet pawn moves
+                if (board[square] == P) {
+                    int to_square = square - 16;
+                    // check if target square is on board and is empty
+                    if (!(to_square & 0x88) && board[to_square] == e) {
+                        // pawn promotions
+                        // is pawn on 7th rank
+                        if (square >= a7 && square <= h7) {
+                            cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                            cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                            cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                            cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                        }
+                        else {
+                            // one square ahead pawn move
+                            cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+
+                            // two squares ahead
+                            // pawn is in second rand and target square is empty
+                            if ((square >= a2 && square <= h2) && board[square - 32] == e) {
+                                cout << square_to_coord[square] << square_to_coord[square - 32] << endl;
+                            }
+                            
+                        }
+                        
+                    }
+                }
+            } 
+            // black pawn and castling moves
+            else {
+                // quiet pawn moves
+                if (board[square] == p) {
+                    int to_square = square + 16;
+                    // check if target square is on board and is empty
+                    if (!(to_square & 0x88) && board[to_square] == e) {
+                        // pawn promotions
+                        // is pawn on 2nd rank
+                        if (square >= a2 && square <= h2) {
+                            cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                            cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                            cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                            cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                        }
+                        else {
+                            // one square ahead pawn move
+                            cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+
+                            // two squares ahead
+                            // pawn is in 7th rand and target square is empty
+                            if ((square >= a7 && square <= h7) && board[square + 32] == e) {
+                                cout << square_to_coord[square] << square_to_coord[square + 32] << endl;
+                            }
+                            
+                        }
+                        
+                    }
+                }
+            }
+        }
+    }
+    
+}
+
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    parse_fen("8/8/8/2R2p2/8/8/2p5/8 w KQkq - 0 1");
+    parse_fen("8/3p4/2p5/2p5/8/8/p7/8 b KQkq - 0 1");
     print_board();
     print_board_stats();
-    print_attacks(white);
+    //print_attacks(white);
+    generate_moves();
+    //cout << a2 << "-" << h2 << endl;
 
 }
