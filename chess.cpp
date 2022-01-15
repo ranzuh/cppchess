@@ -110,6 +110,68 @@ int king_offsets[] = { -17, -16, -15, -1, 1, 15, 16, 17 };
 // functions //
 ///////////////
 
+// encode moves to 21 bit representation
+/* 
+Move encoding
+
+0000 0000 0000 0000 0111 1111   source square       7 bits  0x7f
+0000 0000 0011 1111 1000 0000   target square       7 bits  0x7f
+0000 0001 1100 0000 0000 0000   promotion piece     3 bits  0x7
+0000 0010 0000 0000 0000 0000   capture flag        1 bit   0x1
+0000 0100 0000 0000 0000 0000   double pawn flag    1 bit   0x1
+0000 1000 0000 0000 0000 0000   en passant flag     1 bit   0x1
+0001 0000 0000 0000 0000 0000   castling flag       1 bit   0x1
+
+TODO: Test if #define macros are more performant
+
+*/
+int encode_move(
+    int source, 
+    int target, 
+    int promotion,
+    int capture,
+    int double_pawn, 
+    int enpassant, 
+    int castling) 
+{
+    return 
+        source | 
+        target << 7 | 
+        promotion << 14 | 
+        capture << 17 | 
+        double_pawn << 18 | 
+        enpassant << 19 | 
+        castling << 20;
+}
+
+int decode_source(int move) {
+    return move & 0x7f;
+}
+
+int decode_target(int move) {
+    return (move >> 7) & 0x7f; 
+}
+
+int decode_promotion(int move) {
+    return (move >> 14) & 0x7;
+}
+
+int decode_capture(int move) {
+    return (move >> 17) & 0x1;
+}
+
+int decode_double_pawn(int move) {
+    return (move >> 18) & 0x1;
+}
+
+int decode_enpassant(int move) {
+    return (move >> 19) & 0x1;
+}
+
+int decode_castling(int move) {
+    return (move >> 20) & 0x1;
+}
+
 // is given square attacked by given side
 int is_square_attacked(int square, int side) {
 
@@ -375,10 +437,7 @@ void parse_fen(string fen) {
     if (fen[i] != '-') {
         int file = fen[i] - 'a';
         int rank = fen[i+1] - '0';
-
-        cout << "file " << file << " rank " << rank; 
         enpassant = (8 - rank) * 16 + file;
-        cout << "enpassant sq: " << enpassant;
     } else {
         enpassant = no_sq;
     }
@@ -729,9 +788,21 @@ int main() {
     print_board();
     print_board_stats();
     //print_attacks(white);
-    generate_moves();
+    //generate_moves();
     //cout << a2 << "-" << h2 << endl;
 
     //cout << (0b0000 & Kc) << endl;
+
+    int move = encode_move(e2, e4, n, 0, 1, 0, 1);
+
+    cout << move << endl;
+
+    cout << square_to_coord[decode_source(move)] << endl;
+    cout << square_to_coord[decode_target(move)] << endl;
+    cout << decode_promotion(move) << endl;
+    cout << decode_capture(move) << endl;
+    cout << decode_double_pawn(move) << endl;
+    cout << decode_enpassant(move) << endl;
+    cout << decode_castling(move) << endl;    
 
 }
