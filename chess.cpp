@@ -339,7 +339,7 @@ void print_board() {
 
             // print square as ascii if not outside
             if (!(square & 0x88)) {
-                cout << unicode_pieces[board[square]] << ' ';
+                cout << ascii_pieces[board[square]] << ' ';
             }
         }
 
@@ -1016,11 +1016,23 @@ uint64_t perft(int depth) {
     return nodes;
 }
 
+void run_perft() {
+    auto start = chrono::high_resolution_clock::now();
+    uint64_t result = perft(init_depth);
+    auto stop = chrono::high_resolution_clock::now();
+    
+    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+
+    cout << "Perft results:    " << result << endl;
+    cout << "Total time:       " << duration.count() << " ms" << endl;
+    cout << fixed << "Nodes per second: " << int(1000.0 * result / duration.count()) << endl;
+}
+
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    parse_fen(tricky_position);
-    parse_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ");
+    parse_fen(start_position);
+    //parse_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ");
     //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
     //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
     //print_board();
@@ -1034,16 +1046,7 @@ int main() {
     
     //int move = encode_move(e1, e2, 0, 0, 0, 0, 0);
     //make_move(move);
-
     init_depth = 4;
-
-    auto start = chrono::high_resolution_clock::now();
-    u_int64_t result = perft(init_depth);
-    auto stop = chrono::high_resolution_clock::now();
+    run_perft();
     
-    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
-
-    cout << "Perft results:    " << result << endl;
-    cout << "Total time:       " << duration.count() << " ms" << endl;
-    cout << fixed << "Nodes per second: " << int(1000.0 * result / duration.count()) << endl;
 }
