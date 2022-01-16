@@ -109,6 +109,21 @@ struct movelist
 {
     int moves[256];
     int count;
+
+    movelist() {
+        count = 0;
+    }
+
+    void add_move(int move) {
+        // add move to the move list
+        moves[count] = move;
+        // increment move count
+        count++;
+    }
+
+    void reset() {
+        count = 0;
+    }
 };
 
 ///////////////
@@ -121,11 +136,11 @@ Move encoding
 
 0000 0000 0000 0000 0111 1111   source square       7 bits  0x7f
 0000 0000 0011 1111 1000 0000   target square       7 bits  0x7f
-0000 0001 1100 0000 0000 0000   promotion piece     3 bits  0x7
-0000 0010 0000 0000 0000 0000   capture flag        1 bit   0x1
-0000 0100 0000 0000 0000 0000   double pawn flag    1 bit   0x1
-0000 1000 0000 0000 0000 0000   en passant flag     1 bit   0x1
-0001 0000 0000 0000 0000 0000   castling flag       1 bit   0x1
+0000 0011 1100 0000 0000 0000   promotion piece     4 bits  0xf
+0000 0100 0000 0000 0000 0000   capture flag        1 bit   0x1
+0000 1000 0000 0000 0000 0000   double pawn flag    1 bit   0x1
+0001 0000 0000 0000 0000 0000   en passant flag     1 bit   0x1
+0010 0000 0000 0000 0000 0000   castling flag       1 bit   0x1
 
 TODO: Test if #define macros are more performant
 
@@ -143,10 +158,10 @@ int encode_move(
         source | 
         target << 7 | 
         promotion << 14 | 
-        capture << 17 | 
-        double_pawn << 18 | 
-        enpassant << 19 | 
-        castling << 20;
+        capture << 18 | 
+        double_pawn << 19 | 
+        enpassant << 20 | 
+        castling << 21;
 }
 
 int decode_source(int move) {
@@ -158,23 +173,23 @@ int decode_target(int move) {
 }
 
 int decode_promotion(int move) {
-    return (move >> 14) & 0x7;
+    return (move >> 14) & 0xf;
 }
 
 int decode_capture(int move) {
-    return (move >> 17) & 0x1;
-}
-
-int decode_double_pawn(int move) {
     return (move >> 18) & 0x1;
 }
 
-int decode_enpassant(int move) {
+int decode_double_pawn(int move) {
     return (move >> 19) & 0x1;
 }
 
-int decode_castling(int move) {
+int decode_enpassant(int move) {
     return (move >> 20) & 0x1;
+}
+
+int decode_castling(int move) {
+    return (move >> 21) & 0x1;
 }
 
 // is given square attacked by given side
@@ -461,30 +476,36 @@ void print_board_stats() {
 }
 
 // generate pawn moves for given side from square
-void generate_pawn_moves(int side, int square) {
+void generate_pawn_moves(int side, int square, movelist &moves) {
     if (side == white) {
-        // white pawn and castling moves
+        // white pawn
         if (board[square] == P) {
-            // promotions and quiet moves
+            // non capture promotions and quiet moves
             int to_square = square - 16;
             // check if target square is on board and is empty
             if (!(to_square & 0x88) && board[to_square] == e) {
                 // pawn promotions
                 // is pawn on 7th rank
                 if (square >= a7 && square <= h7) {
-                    cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
-                    cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
-                    cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
-                    cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                    moves.add_move(encode_move(square, to_square, N, 0, 0, 0, 0));
+                    moves.add_move(encode_move(square, to_square, B, 0, 0, 0, 0));
+                    moves.add_move(encode_move(square, to_square, R, 0, 0, 0, 0));
+                    moves.add_move(encode_move(square, to_square, Q, 0, 0, 0, 0));
+                    // cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                    // cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                    // cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                    // cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
                 }
                 else {
                     // one square ahead pawn move
-                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                    //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
 
                     // two squares ahead
                     // pawn is in second rand and target square is empty
                     if ((square >= a2 && square <= h2) && board[square - 32] == e) {
-                        cout << square_to_coord[square] << square_to_coord[square - 32] << endl;
+                        moves.add_move(encode_move(square, square - 32, 0, 0, 1, 0, 0));
+                        //cout << square_to_coord[square] << square_to_coord[square - 32] << endl;
                     }
                 }
             }
@@ -503,18 +524,24 @@ void generate_pawn_moves(int side, int square) {
                             // promotion capture
                             // is pawn on 7th rank 
                             if (square >= a7 && square <= h7) {
-                                cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
-                                cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
-                                cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
-                                cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                                moves.add_move(encode_move(square, to_square, N, 1, 0, 0, 0));
+                                moves.add_move(encode_move(square, to_square, B, 1, 0, 0, 0));
+                                moves.add_move(encode_move(square, to_square, R, 1, 0, 0, 0));
+                                moves.add_move(encode_move(square, to_square, Q, 1, 0, 0, 0));
+                                // cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                                // cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                                // cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                                // cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
                             }
                             // normal capture
                             else {
-                                cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                                moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
+                                //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                             }
                         }
                         // en passant
                         if (to_square == enpassant) {
+                            moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
                             cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                         }
                     }
@@ -523,7 +550,7 @@ void generate_pawn_moves(int side, int square) {
         }    
     }
     else {
-        // black pawn and castling moves
+        // black pawn
         if (board[square] == p) {
             int to_square = square + 16;
             // check if target square is on board and is empty
@@ -531,19 +558,25 @@ void generate_pawn_moves(int side, int square) {
                 // pawn promotions
                 // is pawn on 2nd rank
                 if (square >= a2 && square <= h2) {
-                    cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
-                    cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
-                    cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
-                    cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                    moves.add_move(encode_move(square, to_square, n, 0, 0, 0, 0));
+                    moves.add_move(encode_move(square, to_square, b, 0, 0, 0, 0));
+                    moves.add_move(encode_move(square, to_square, r, 0, 0, 0, 0));
+                    moves.add_move(encode_move(square, to_square, q, 0, 0, 0, 0));
+                    // cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                    // cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                    // cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                    // cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
                 }
                 else {
                     // one square ahead pawn move
-                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                    //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
 
                     // two squares ahead
                     // pawn is in 7th rand and target square is empty
                     if ((square >= a7 && square <= h7) && board[square + 32] == e) {
-                        cout << square_to_coord[square] << square_to_coord[square + 32] << endl;
+                        moves.add_move(encode_move(square, to_square, 0, 0, 1, 0, 0));
+                        //cout << square_to_coord[square] << square_to_coord[square + 32] << endl;
                     }
                     
                 }
@@ -564,19 +597,25 @@ void generate_pawn_moves(int side, int square) {
                             // promotion capture
                             // is pawn on 2nd rank 
                             if (square >= a2 && square <= h2) {
-                                cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
-                                cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
-                                cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
-                                cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
+                                moves.add_move(encode_move(square, to_square, n, 1, 0, 0, 0));
+                                moves.add_move(encode_move(square, to_square, b, 1, 0, 0, 0));
+                                moves.add_move(encode_move(square, to_square, r, 1, 0, 0, 0));
+                                moves.add_move(encode_move(square, to_square, q, 1, 0, 0, 0));
+                                // cout << square_to_coord[square] << square_to_coord[to_square] << 'n' << endl;
+                                // cout << square_to_coord[square] << square_to_coord[to_square] << 'b' << endl;
+                                // cout << square_to_coord[square] << square_to_coord[to_square] << 'r' << endl;
+                                // cout << square_to_coord[square] << square_to_coord[to_square] << 'q' << endl;
                             }
                             // normal capture
                             else {
-                                cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                                moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
+                                //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                             }
                         }
                         // en passant
                         if (to_square == enpassant) {
-                            cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                            moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
+                            //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                         }
                     }
                 }
@@ -585,8 +624,8 @@ void generate_pawn_moves(int side, int square) {
     }
 }
 
-// generate pawn moves for given side from square
-void generate_castling_moves(int side, int square) {
+// generate castling for given side from square
+void generate_castling_moves(int side, int square, movelist &moves) {
     if (side == white) {
         // white castling
         if (board[square] == K) {
@@ -596,7 +635,8 @@ void generate_castling_moves(int side, int square) {
                 if (board[f1] == e && board[g1] == e) {
                     // ensure king and next square not attacked (move gen will not allow g1 to be in check)
                     if (!is_square_attacked(square, black) && !is_square_attacked(f1, black)) {
-                        cout << square_to_coord[e1] << square_to_coord[g1] << endl;
+                        moves.add_move(encode_move(e1, g1, 0, 0, 0, 0, 1));
+                        //cout << square_to_coord[e1] << square_to_coord[g1] << endl;
                     }
                 }
             }
@@ -607,7 +647,8 @@ void generate_castling_moves(int side, int square) {
                 if (board[d1] == e && board[c1] == e && board[b1] == e) {
                     // ensure king and next square not attacked (move gen will not allow c1 to be in check)
                     if (!is_square_attacked(square, black) && !is_square_attacked(d1, black)) {
-                        cout << square_to_coord[e1] << square_to_coord[c1] << endl;
+                        moves.add_move(encode_move(e1, c1, 0, 0, 0, 0, 1));
+                        //cout << square_to_coord[e1] << square_to_coord[c1] << endl;
                     }
                 }
             }
@@ -622,7 +663,8 @@ void generate_castling_moves(int side, int square) {
                 if (board[f8] == e && board[g8] == e) {
                     // ensure king and next square not attacked (move gen will not allow g1 to be in check)
                     if (!is_square_attacked(square, white) && !is_square_attacked(f8, white)) {
-                        cout << square_to_coord[e8] << square_to_coord[g8] << endl;
+                        moves.add_move(encode_move(e8, g8, 0, 0, 0, 0, 1));
+                        //cout << square_to_coord[e8] << square_to_coord[g8] << endl;
                     }
                 }
             }
@@ -633,7 +675,8 @@ void generate_castling_moves(int side, int square) {
                 if (board[d8] == e && board[c8] == e && board[b8] == e) {
                     // ensure king and next square not attacked (move gen will not allow c1 to be in check)
                     if (!is_square_attacked(square, white) && !is_square_attacked(d8, white)) {
-                        cout << square_to_coord[e8] << square_to_coord[c8] << endl;
+                        moves.add_move(encode_move(e8, c8, 0, 0, 0, 0, 1));
+                        //cout << square_to_coord[e8] << square_to_coord[c8] << endl;
                     }
                 }
             }
@@ -642,7 +685,7 @@ void generate_castling_moves(int side, int square) {
 }
 
 // generate knight moves
-void generate_knight_moves(int side, int square) {
+void generate_knight_moves(int side, int square, movelist &moves) {
     if (side == white ? board[square] == N : board[square] == n) {
         for (int offset : knight_offsets) {
             // init target square
@@ -654,11 +697,16 @@ void generate_knight_moves(int side, int square) {
             if (!(to_square & 0x88)) {
                 // ensure that target square is empty or has enemy piece
                 if (side == white ? (piece == e || (piece >= p && piece <= k)) : (piece == e || (piece >= P && piece <= K))) {
-                    // here you could differentiate between captures and quiet moves
-                    // eg.
-                    // if (piece != e)
-                    // else
-                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    // capture
+                    if (piece != e) {
+                        moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
+                    }
+                    // quiet move
+                    else {
+                        moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                    }
+                    
+                    //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                 }
             }
         }
@@ -666,7 +714,7 @@ void generate_knight_moves(int side, int square) {
 }
 
 // generate king moves
-void generate_king_moves(int side, int square) {
+void generate_king_moves(int side, int square, movelist &moves) {
     if (side == white ? board[square] == K : board[square] == k) {
         for (int offset : king_offsets) {
             // init target square
@@ -678,11 +726,15 @@ void generate_king_moves(int side, int square) {
             if (!(to_square & 0x88)) {
                 // ensure that target square is empty or has enemy piece
                 if (side == white ? (piece == e || (piece >= p && piece <= k)) : (piece == e || (piece >= P && piece <= K))) {
-                    // here you could differentiate between captures and quiet moves
-                    // eg.
-                    // if (piece != e)
-                    // else
-                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    // capture
+                    if (piece != e) {
+                        moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
+                    }
+                    // quiet move
+                    else {
+                        moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                    }
+                    //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                 }
             }
         }
@@ -690,7 +742,7 @@ void generate_king_moves(int side, int square) {
 }
 
 // generate bishop moves
-void generate_bishop_moves(int side, int square) {
+void generate_bishop_moves(int side, int square, movelist &moves) {
     // correct color bishop or queen
     if (side == white ? board[square] == B || board[square] == Q : 
         board[square] == b || board[square] == q) {
@@ -705,20 +757,24 @@ void generate_bishop_moves(int side, int square) {
                 
                 // hits own piece
                 if (side == white ? piece >= P && piece <= K :
-                    piece >= p && piece <= k) {
+                    piece >= p && piece <= k) 
+                {
                     break;
                 }
 
                 // hits enemy piece
                 if (side == white ? piece >= p && piece <= k :
-                    piece >= P && piece <= K) {
-                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    piece >= P && piece <= K) 
+                {
+                    moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));    
+                    //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                     break;
 
                 }
                 // hits empty square
                 if (piece == e) {
-                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                    //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                 }
 
                 // increment target square
@@ -729,7 +785,7 @@ void generate_bishop_moves(int side, int square) {
 }
 
 // generate rook moves
-void generate_rook_moves(int side, int square) {
+void generate_rook_moves(int side, int square, movelist &moves) {
     // correct color rook or queen
     if (side == white ? board[square] == R || board[square] == Q : 
         board[square] == r || board[square] == q) {
@@ -744,20 +800,24 @@ void generate_rook_moves(int side, int square) {
                 
                 // hits own piece
                 if (side == white ? piece >= P && piece <= K :
-                    piece >= p && piece <= k) {
+                    piece >= p && piece <= k) 
+                {
                     break;
                 }
 
                 // hits enemy piece
                 if (side == white ? piece >= p && piece <= k :
-                    piece >= P && piece <= K) {
-                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    piece >= P && piece <= K) 
+                {
+                    moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
+                    //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                     break;
 
                 }
                 // hits empty square
                 if (piece == e) {
-                    cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                    moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                    //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                 }
 
                 // increment target square
@@ -766,61 +826,53 @@ void generate_rook_moves(int side, int square) {
         }
     }
 }
-// generate queen moves
-
 
 // move generator
-void generate_moves() {
+void generate_moves(movelist &moves) {
+
+    // empty out movelist
+    moves.reset();
+
     // loop over all squares of the board
     for (int square = 0; square < 128; square++) {
         // is square on board
         if (!(square & 0x88)) {
-            generate_pawn_moves(side, square);
-            generate_castling_moves(side, square);
-            generate_knight_moves(side, square);
-            generate_king_moves(side, square);
-            generate_bishop_moves(side, square);
-            generate_rook_moves(side, square);
+            generate_pawn_moves(side, square, moves);
+            generate_castling_moves(side, square, moves);
+            generate_knight_moves(side, square, moves);
+            generate_king_moves(side, square, moves);
+            generate_bishop_moves(side, square, moves);
+            generate_rook_moves(side, square, moves);
         }
     }
 }
 
-// populate move list
-void add_move(movelist *movelist, int move) {
-    // add move to the move list
-    movelist->moves[movelist->count] = move;
-    // increment move count
-    movelist->count++;
+void print_movelist(movelist &moves) {
+    for (int i = 0; i < moves.count; i++) {
+        cout << square_to_coord[decode_source(moves.moves[i])];
+        cout << square_to_coord[decode_target(moves.moves[i])] << " ";
+        cout << (decode_promotion(moves.moves[i]) ? ascii_pieces[decode_promotion(moves.moves[i])] : '-') << " ";
+        cout << (decode_capture(moves.moves[i]) ? 'x' : '-') << " ";
+        cout << (decode_double_pawn(moves.moves[i]) ? 'd' : '-') << " ";
+        cout << (decode_enpassant(moves.moves[i]) ? 'e' : '-') << " ";
+        cout << (decode_castling(moves.moves[i]) ? 'c' : '-') << endl;
+    }
+
+    cout << "Total move count: " << moves.count << endl;
 }
+
 
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    //parse_fen("8/8/2PPP3/2PQP3/2PPP3/8/8/8 w ---- b3 0 1");
-    parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
+    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
     print_board();
     print_board_stats();
     //print_attacks(white);
-    //generate_moves();
-    //cout << a2 << "-" << h2 << endl;
-
-    //cout << (0b0000 & Kc) << endl;
-
-    int move1 = encode_move(e2, e4, 0, 1, 0, 0, 0);
-    int move2 = encode_move(e7, e5, 0, 1, 0, 0, 0);
-
-
-    //cout << move << endl;
 
     movelist moves;
-    moves.count = 0;
+    generate_moves(moves);
 
-    add_move(&moves, move1); 
-    add_move(&moves, move2);
-
-    for (int i; i < moves.count; i++) {
-        cout << square_to_coord[decode_source(moves.moves[i])];
-        cout << square_to_coord[decode_target(moves.moves[i])] << endl;
-    }
-
+    //print_movelist(moves);
 }
