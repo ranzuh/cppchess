@@ -872,11 +872,102 @@ void print_movelist(movelist &moves) {
     cout << "Total move count: " << moves.count << endl;
 }
 
+int make_move(int move) {
+    // define board state copies
+    int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
+
+    // copy board state
+    copy(board, board + 128, board_copy);
+    copy(king_squares, king_squares + 2, king_squares_copy);
+    side_copy = side;
+    enpassant_copy = enpassant;
+    castle_copy = castle;
+
+    // decode move
+    int from_square = decode_source(move);
+    int to_square = decode_target(move);
+    int promoted_piece = decode_promotion(move);
+    int is_capture = decode_capture(move);
+    int is_enpassant = decode_enpassant(move);
+    int is_double_pawn = decode_double_pawn(move);
+    int is_castling = decode_castling(move);
+
+    // reset enpassant square
+    enpassant = no_sq;
+
+    // handle promotion
+    if (promoted_piece != e) {
+        board[to_square] = promoted_piece;
+        board[from_square] = e;
+    }
+    else if (is_enpassant) {
+        board[to_square] = board[from_square];
+        board[from_square] = e;
+        side == white ? board[to_square + 16] = e : board[to_square - 16] = e;
+    }
+    else if (is_double_pawn) {
+        board[to_square] = board[from_square];
+        board[from_square] = e;
+        side == white ? enpassant = to_square + 16 : enpassant = to_square - 16;
+    }
+    else if (is_castling) {
+        board[to_square] = board[from_square];
+        board[from_square] = e;
+        switch (to_square) {
+            // white queen side castling
+            case c1:
+                board[d1] = board[a1];
+                board[a1] = e;
+                break;
+            // white king side castling
+            case g1:
+                board[f1] = board[h1];
+                board[h1] = e;
+                break;
+            // black queen side castling
+            case c8:
+                board[d8] = board[a8];
+                board[a8] = e;
+                break;
+            // black king    side castling
+            case g8:
+                board[f8] = board[h8];
+                board[h8] = e;
+                break;
+            default:
+                break;
+        }
+    }
+    else {
+        // make move
+        board[to_square] = board[from_square];
+        board[from_square] = e;
+    }
+
+    if (board[to_square] == K || board[to_square] == k) {
+        king_squares[side] = to_square;
+    }
+
+    
+
+    //cout << square_to_coord[from_square] << square_to_coord[to_square] << endl;
+
+    
+
+    // restore board state
+    // copy(board_copy, board_copy + 128, board);
+    // copy(king_squares_copy, king_squares_copy + 2, king_squares);
+    // side = side_copy;
+    // enpassant = enpassant_copy;
+    // castle = castle_copy;
+
+    return 0;
+}
 
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    parse_fen("r2k3r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R2K3R b KQkq - 0 1");
+    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1");
     //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
     print_board();
     print_board_stats();
@@ -886,4 +977,10 @@ int main() {
     generate_moves(moves);
 
     //print_movelist(moves);
+    
+    int move = encode_move(e8, c8, 0, 0, 0, 0, 1);
+
+    make_move(move);
+    print_board();
+    print_board_stats();
 }
