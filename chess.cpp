@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <chrono>
 
 using namespace std;
 
@@ -52,14 +53,14 @@ string unicode_pieces[] = {
 };
 
 int board[128] = {
-    r, n, b, q, k, b, n, r, o, o, o, o, o, o, o, o,
-    p, p, p, p, p, p, p, p, o, o, o, o, o, o, o, o,
-    e, e, e, e, e, e, e, e, o, o, o, o, o, o, o, o,
-    e, e, e, e, e, e, e, e, o, o, o, o, o, o, o, o,
-    e, e, e, e, e, e, e, e, o, o, o, o, o, o, o, o,
-    e, e, e, e, e, e, e, e, o, o, o, o, o, o, o, o,
-    P, P, P, P, P, P, P, P, o, o, o, o, o, o, o, o,
-    R, N, B, Q, K, B, N, R, o, o, o, o, o, o, o, o
+    r, n, b, q, k, b, n, r,   o, o, o, o, o, o, o, o,
+    p, p, p, p, p, p, p, p,   o, o, o, o, o, o, o, o,
+    e, e, e, e, e, e, e, e,   o, o, o, o, o, o, o, o,
+    e, e, e, e, e, e, e, e,   o, o, o, o, o, o, o, o,
+    e, e, e, e, e, e, e, e,   o, o, o, o, o, o, o, o,
+    e, e, e, e, e, e, e, e,   o, o, o, o, o, o, o, o,
+    P, P, P, P, P, P, P, P,   o, o, o, o, o, o, o, o,
+    R, N, B, Q, K, B, N, R,   o, o, o, o, o, o, o, o
 };
 
 // side to move
@@ -338,7 +339,7 @@ void print_board() {
 
             // print square as ascii if not outside
             if (!(square & 0x88)) {
-                cout << ascii_pieces[board[square]] << ' ';
+                cout << unicode_pieces[board[square]] << ' ';
             }
         }
 
@@ -575,7 +576,7 @@ void generate_pawn_moves(int side, int square, movelist &moves) {
                         // en passant
                         if (to_square == enpassant) {
                             moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
-                            cout << square_to_coord[square] << square_to_coord[to_square] << endl;
+                            //cout << square_to_coord[square] << square_to_coord[to_square] << endl;
                         }
                     }
                 }
@@ -608,7 +609,7 @@ void generate_pawn_moves(int side, int square, movelist &moves) {
                     // two squares ahead
                     // pawn is in 7th rand and target square is empty
                     if ((square >= a7 && square <= h7) && board[square + 32] == e) {
-                        moves.add_move(encode_move(square, to_square, 0, 0, 1, 0, 0));
+                        moves.add_move(encode_move(square, square + 32, 0, 0, 1, 0, 0));
                         //cout << square_to_coord[square] << square_to_coord[square + 32] << endl;
                     }
                     
@@ -894,6 +895,9 @@ void print_movelist(movelist &moves) {
     cout << "Total move count: " << moves.count << endl;
 }
 
+// make a move on the board if its legal
+// returns 1 if legal, 0 if illegal
+// todo differentiate between captures and all_moves
 int make_move(int move) {
     // define board state copies
     int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
@@ -966,6 +970,7 @@ int make_move(int move) {
         board[from_square] = e;
     }
 
+    // update king square
     if (board[to_square] == K || board[to_square] == k) {
         king_squares[side] = to_square;
     }
@@ -1031,9 +1036,9 @@ uint64_t perft(int depth) {
                 cout << square_to_coord[decode_target(moves.moves[i])];
                 cout << " " << move_nodes << endl;
             }
-    
+            
 
-    // restore board state
+            // restore board state
             copy(board_copy, board_copy + 128, board);
             copy(king_squares_copy, king_squares_copy + 2, king_squares);
             side = side_copy;
