@@ -998,36 +998,92 @@ int make_move(int move) {
     }
 }
 
+int init_depth = 0;
 
+// perft test
+uint64_t perft(int depth) {
+    movelist moves;
+    int n_moves, i;
+    uint64_t nodes = 0;
+
+    if (depth == 0) return 1;
+
+    generate_moves(moves);
+
+    // define board state copies
+    int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
+    // copy board state
+    copy(board, board + 128, board_copy);
+    copy(king_squares, king_squares + 2, king_squares_copy);
+    side_copy = side;
+    enpassant_copy = enpassant;
+    castle_copy = castle;
+    
+    for (int i = 0; i < moves.count; i++) {
+        //print_board();
+        if (make_move(moves.moves[i])) {
+            //print_board();
+            //getchar();
+            long move_nodes = perft(depth - 1);
+            nodes += move_nodes;
+            if (depth == init_depth) {
+                cout << square_to_coord[decode_source(moves.moves[i])];
+                cout << square_to_coord[decode_target(moves.moves[i])];
+                cout << " " << move_nodes << endl;
+            }
     
 
     // restore board state
-    // copy(board_copy, board_copy + 128, board);
-    // copy(king_squares_copy, king_squares_copy + 2, king_squares);
-    // side = side_copy;
-    // enpassant = enpassant_copy;
-    // castle = castle_copy;
+            copy(board_copy, board_copy + 128, board);
+            copy(king_squares_copy, king_squares_copy + 2, king_squares);
+            side = side_copy;
+            enpassant = enpassant_copy;
+            castle = castle_copy;
 
-    return 0;
+            //print_board();
+            //getchar();
+        }
+    }
+
+    return nodes;
 }
 
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1");
-    //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
-    print_board();
-    print_board_stats();
+    parse_fen(tricky_position);
+    parse_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ");
+    //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
+    //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
+    //print_board();
+    //print_board_stats();
     //print_attacks(white);
 
-    movelist moves;
-    generate_moves(moves);
+    //movelist moves;
+    //generate_moves(moves);
 
     //print_movelist(moves);
     
-    int move = encode_move(e8, c8, 0, 0, 0, 0, 1);
+    //int move = encode_move(e1, e2, 0, 0, 0, 0, 0);
+    //make_move(move);
 
-    make_move(move);
-    print_board();
-    print_board_stats();
+    //print_board();
+    //print_board_stats();
+
+    //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
+
+    //int move = encode_move(b2, b4, 0, 0, 1, 0, 0);
+    //make_move(move);
+
+    init_depth = 4;
+
+    auto start = chrono::high_resolution_clock::now();
+    u_int64_t result = perft(init_depth);
+    auto stop = chrono::high_resolution_clock::now();
+    
+    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+
+    cout << "Perft results:    " << result << endl;
+    cout << "Total time:       " << duration.count() << " ms" << endl;
+    cout << fixed << "Nodes per second: " << int(1000.0 * result / duration.count()) << endl;
 }
