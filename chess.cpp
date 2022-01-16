@@ -1023,7 +1023,8 @@ void run_perft() {
     
     auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
 
-    cout << "Perft results:    " << result << endl;
+    cout << endl;
+    cout << "Nodes visited:    " << result << endl;
     cout << "Total time:       " << duration.count() << " ms" << endl;
     cout << fixed << "Nodes per second: " << int(1000.0 * result / duration.count()) << endl;
 }
@@ -1046,7 +1047,7 @@ int main() {
     
     //int move = encode_move(e1, e2, 0, 0, 0, 0, 0);
     //make_move(move);
-    init_depth = 4;
+    init_depth = 5;
     run_perft();
     
 }
