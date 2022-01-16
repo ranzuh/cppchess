@@ -71,6 +71,28 @@ int enpassant = no_sq;
 // castling rights dec 15 = bin 1111 all can castle
 int castle = 15;
 
+/*
+                            castle & map    bin     dec
+white king moved            1111 & 1100 =   1100    12
+white kings rook moved      1111 & 1110 =   1110    14
+white queens rook moved     1111 & 1101 =   1101    13
+
+black king moved            1111 & 0011 =   0011    3
+black kings rook moved      1111 & 1011 =   1011    11
+black queens rook moved     1111 & 0111 =   0111    7
+
+*/
+int castling_board[128] {
+    7,  15, 15, 15, 3,  15, 15, 11,   o, o, o, o, o, o, o, o,
+    15, 15, 15, 15, 15, 15, 15, 15,   o, o, o, o, o, o, o, o,
+    15, 15, 15, 15, 15, 15, 15, 15,   o, o, o, o, o, o, o, o,
+    15, 15, 15, 15, 15, 15, 15, 15,   o, o, o, o, o, o, o, o,
+    15, 15, 15, 15, 15, 15, 15, 15,   o, o, o, o, o, o, o, o,
+    15, 15, 15, 15, 15, 15, 15, 15,   o, o, o, o, o, o, o, o,
+    15, 15, 15, 15, 15, 15, 15, 15,   o, o, o, o, o, o, o, o,
+    13, 15, 15, 15, 12, 15, 15, 14,   o, o, o, o, o, o, o, o
+};
+
 string square_to_coord[] = {
     "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "i8", "j8", "k8", "l8", "m8", "n8", "o8", "p8", 
     "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", "i7", "j7", "k7", "l7", "m7", "n7", "o7", "p7", 
@@ -948,9 +970,34 @@ int make_move(int move) {
         king_squares[side] = to_square;
     }
 
+    // update castling rights
+    // king or rook has moved
+    castle &= castling_board[from_square];
+    // rook was captured
+    castle &= castling_board[to_square];
     
+    // unmake move if king under check
+    if (is_square_attacked(king_squares[side], !side)) {
+        // restore board state
+        copy(board_copy, board_copy + 128, board);
+        copy(king_squares_copy, king_squares_copy + 2, king_squares);
+        side = side_copy;
+        enpassant = enpassant_copy;
+        castle = castle_copy;
 
-    //cout << square_to_coord[from_square] << square_to_coord[to_square] << endl;
+        //cout << "Illegal move, restoring board state" << endl;
+
+        // illegal move
+        return 0;
+    }
+    else {
+        // change side
+        side = !side;
+        // legal move
+        return 1;
+    }
+}
+
 
     
 
