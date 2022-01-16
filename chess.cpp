@@ -105,6 +105,9 @@ int bishop_offsets[] = { -17, -15, 15, 17 };
 int rook_offsets[] = { -16, -1, 1, 16 };
 int king_offsets[] = { -17, -16, -15, -1, 1, 15, 16, 17 };
 
+// both king's squares
+int king_squares[] = { e1, e8 };
+
 struct movelist
 {
     int moves[256];
@@ -383,6 +386,14 @@ void parse_fen(string fen) {
             if (!(square & 0x88)) {
                 // match characters
                 if ((fen[i] > 'a' && fen[i] < 'z') || (fen[i] > 'A' && fen[i] < 'Z')) {
+                    
+                    // set king's positions
+                    if (fen[i] == 'K') {
+                        king_squares[white] = square;
+                    }
+                    else if (fen[i] == 'k') {
+                        king_squares[black] = square;
+                    }
 
                     // set piece
                     board[square] = char_pieces[fen[i]];
@@ -471,8 +482,8 @@ void print_board_stats() {
     cout << (castle & Qc ? 'Q' : '-');
     cout << (castle & kc ? 'k' : '-');
     cout << (castle & qc ? 'q' : '-') << endl;
-    cout << "    Enpassant:       " << (enpassant != no_sq ? square_to_coord[enpassant] : "-") << endl << endl;
-
+    cout << "    Enpassant:       " << (enpassant != no_sq ? square_to_coord[enpassant] : "-") << endl;
+    cout << "    Kings square:    " << square_to_coord[king_squares[side]] << endl << endl;
 }
 
 // generate pawn moves for given side from square
@@ -865,7 +876,7 @@ void print_movelist(movelist &moves) {
 int main() {
     //cout << "sq: " + to_string(e4) + " coord: " + square_to_coord[e4];
 
-    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    parse_fen("r2k3r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R2K3R b KQkq - 0 1");
     //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
     print_board();
     print_board_stats();
