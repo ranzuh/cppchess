@@ -826,8 +826,8 @@ void generate_rook_moves(int side, int square, movelist &moves) {
     }
 }
 
-// move generator
-void generate_moves(movelist &moves) {
+// pseudo-legal move generator, may leave king under check
+int generate_pseudo_moves(movelist &moves) {
 
     // empty out movelist
     moves.reset();
@@ -844,6 +844,50 @@ void generate_moves(movelist &moves) {
             generate_rook_moves(side, square, moves);
         }
     }
+
+    return moves.count;
+}
+
+// in current sides king attacked after given move
+int is_king_attacked(int move) {
+    int from_square = decode_source(move);
+    int to_square = decode_target(move);
+
+    // make move
+    int square_copy = board[to_square];
+    int king_copy = king_squares[side];
+    board[to_square] = board[from_square];
+    board[from_square] = e;
+
+    // update king square
+    if (board[to_square] == K || board[to_square] == k) {
+        king_squares[side] = to_square;
+    }
+
+    int attacked = is_square_attacked(king_squares[side], !side);
+
+    king_squares[side] = king_copy;
+    board[from_square] = board[to_square];
+    board[to_square] = square_copy;
+
+    return attacked;
+}
+
+// legal move generator
+int generate_legal_moves(movelist &moves) {
+    // empty out movelist
+    moves.reset();
+
+    movelist pseudo_moves;
+    generate_pseudo_moves(pseudo_moves);
+
+    for (int i = 0; i < pseudo_moves.count; i++) {
+        if (!is_king_attacked(pseudo_moves.moves[i])) {
+            moves.add_move(pseudo_moves.moves[i]);
+        }
+    }
+
+    return moves.count;
 }
 
 void print_movelist(movelist &moves) {
@@ -865,23 +909,45 @@ void print_movelist(movelist &moves) {
 // todo differentiate between captures and all_moves
 int make_move(int move) {
     // define board state copies
-    int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
+    // int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
 
     // copy board state
-    copy(board, board + 128, board_copy);
-    copy(king_squares, king_squares + 2, king_squares_copy);
-    side_copy = side;
-    enpassant_copy = enpassant;
-    castle_copy = castle;
+    // copy(board, board + 128, board_copy);
+    // copy(king_squares, king_squares + 2, king_squares_copy);
+    // side_copy = side;
+    // enpassant_copy = enpassant;
+    // castle_copy = castle;
 
     // decode move
     int from_square = decode_source(move);
     int to_square = decode_target(move);
     int promoted_piece = decode_promotion(move);
-    int is_capture = decode_capture(move);
+    //int is_capture = decode_capture(move);
     int is_enpassant = decode_enpassant(move);
     int is_double_pawn = decode_double_pawn(move);
     int is_castling = decode_castling(move);
+
+    // make move
+    board[to_square] = board[from_square];
+    board[from_square] = e;
+
+    // update king square
+    if (board[to_square] == K || board[to_square] == k) {
+        king_squares[side] = to_square;
+    }
+
+    // unmake move if king under check
+    // if (is_square_attacked(king_squares[side], !side)) {
+    //     // restore board state
+    //     copy(board_copy, board_copy + 128, board);
+    //     copy(king_squares_copy, king_squares_copy + 2, king_squares);
+    //     side = side_copy;
+    //     enpassant = enpassant_copy;
+    //     castle = castle_copy;
+
+    //     // illegal move
+    //     return 0;
+    // }
 
     // reset enpassant square
     enpassant = no_sq;
@@ -889,21 +955,21 @@ int make_move(int move) {
     // handle promotion
     if (promoted_piece != e) {
         board[to_square] = promoted_piece;
-        board[from_square] = e;
+        //board[from_square] = e;
     }
     else if (is_enpassant) {
-        board[to_square] = board[from_square];
-        board[from_square] = e;
+        //board[to_square] = board[from_square];
+        //board[from_square] = e;
         side == white ? board[to_square + 16] = e : board[to_square - 16] = e;
     }
     else if (is_double_pawn) {
-        board[to_square] = board[from_square];
-        board[from_square] = e;
+        // board[to_square] = board[from_square];
+        // board[from_square] = e;
         side == white ? enpassant = to_square + 16 : enpassant = to_square - 16;
     }
     else if (is_castling) {
-        board[to_square] = board[from_square];
-        board[from_square] = e;
+        // board[to_square] = board[from_square];
+        // board[from_square] = e;
         switch (to_square) {
             // white queen side castling
             case c1:
@@ -931,13 +997,8 @@ int make_move(int move) {
     }
     else {
         // make move
-        board[to_square] = board[from_square];
-        board[from_square] = e;
-    }
-
-    // update king square
-    if (board[to_square] == K || board[to_square] == k) {
-        king_squares[side] = to_square;
+        // board[to_square] = board[from_square];
+        // board[from_square] = e;
     }
 
     // update castling rights
@@ -945,25 +1006,12 @@ int make_move(int move) {
     castle &= castling_board[from_square];
     // rook was captured
     castle &= castling_board[to_square];
-    
-    // unmake move if king under check
-    if (is_square_attacked(king_squares[side], !side)) {
-        // restore board state
-        copy(board_copy, board_copy + 128, board);
-        copy(king_squares_copy, king_squares_copy + 2, king_squares);
-        side = side_copy;
-        enpassant = enpassant_copy;
-        castle = castle_copy;
 
-        // illegal move
-        return 0;
-    }
-    else {
-        // change side
-        side = !side;
-        // legal move
-        return 1;
-    }
+    // change side
+    side = !side;
+    // legal move
+    return 1;
+
 }
 
 int init_depth = 0;
@@ -971,12 +1019,14 @@ int init_depth = 0;
 // perft test
 uint64_t perft(int depth) {
     movelist moves;
-    int n_moves, i;
+    int n_moves;
     uint64_t nodes = 0;
 
-    if (depth == 0) return 1;
+    n_moves = generate_legal_moves(moves);
+    
+    if (depth == 1) return n_moves;
 
-    generate_moves(moves);
+    //generate_moves(moves);
 
     // define board state copies
     int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
@@ -1036,15 +1086,16 @@ int main() {
     //parse_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ");
     //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
     //parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
-    //print_board();
-    //print_board_stats();
+    print_board();
+    print_board_stats();
     //print_attacks(white);
 
     //movelist moves;
     //generate_moves(moves);
-
-    //print_movelist(moves);
     
+    //generate_legal_moves(moves);
+    //print_movelist(moves);
+
     //int move = encode_move(e1, e2, 0, 0, 0, 0, 0);
     //make_move(move);
     init_depth = 5;
