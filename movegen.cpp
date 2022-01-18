@@ -471,12 +471,21 @@ int generate_pseudo_moves(Position &pos, Movelist &moves) {
 int is_king_attacked(Position &pos, int move) {
     int from_square = decode_source(move);
     int to_square = decode_target(move);
+    int is_enpassant = decode_enpassant(move);
 
-    // make move
+    //Position copy = pos;
+
+    // make move and copy board states
     int square_copy = pos.board[to_square];
     int king_copy = pos.king_squares[pos.side];
     pos.board[to_square] = pos.board[from_square];
     pos.board[from_square] = e;
+    int enpass_piece = 0;
+
+    if (is_enpassant) {
+        pos.side == white ? enpass_piece = pos.board[to_square + 16] : enpass_piece = pos.board[to_square - 16];
+        pos.side == white ? pos.board[to_square + 16] = e : pos.board[to_square - 16] = e;
+    }
 
     // update king square
     if (pos.board[to_square] == K || pos.board[to_square] == k) {
@@ -484,10 +493,17 @@ int is_king_attacked(Position &pos, int move) {
     }
 
     int attacked = is_square_attacked(pos, pos.king_squares[pos.side], !pos.side);
+
+    //pos = copy;
     
+    // restore board state
     pos.king_squares[pos.side] = king_copy;
     pos.board[from_square] = pos.board[to_square];
     pos.board[to_square] = square_copy;
+
+    if (is_enpassant) {
+        pos.side == white ? pos.board[to_square + 16] = enpass_piece : pos.board[to_square - 16] = enpass_piece;
+    }
 
     return attacked;
 }
