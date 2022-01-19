@@ -8,6 +8,7 @@
 #include "movegen.h"
 #include <cassert>
 #include <vector>
+#include <climits>
 
 using namespace std;
 
@@ -121,14 +122,98 @@ void run_perft_tests() {
     cout << endl << "Perft tests passed" << endl;
 }
 
-////////////
-// search //
-////////////
+/////////////////////////
+// search & evaluation //
+/////////////////////////
+
+// e, p, n, b, r, q, k, P, N, B, R, Q, K
+int piece_values[] = { 0, -100, -350, -350, -525, -1000, -10000, 100, 350, 350, 525, 1000, 10000 };
+
+inline int evaluate_position(Position &pos) {
+    int score = 0;
+    for (int square = 0; square < 128; square++) {
+        if (!(square & 0x88)) {
+            score += piece_values[pos.board[square]];
+            //cout << pos.board[square] << " " << piece_values[pos.board[square]] << endl;
+        }
+    }
+    return pos.side == white ? score : -score;
+}
+
+// color +1 for white, -1 for black
+int negamax(Position &pos, int depth) {
+    if (depth == 0) {
+        return evaluate_position(pos);
+    }
+    int value = INT_MIN;
+
+    Movelist moves;
+    generate_legal_moves(pos, moves);
+
+    // copy board state
+    Position copy = pos;
+
+    for (int i = 0; i < moves.count; i++) {
+        if (pos.make_move(moves.moves[i])) {
+            value = max(value, -negamax(pos, depth - 1));
+            // restore board state
+            pos = copy;
+        }
+    }
+
+    return value;
+}
 
 // search position for the best move
-void search_position(int depth) {
+void search_position(Position &pos, int depth) {
     // best move placeholder
-    cout << "bestmove d2d4" << endl;
+    int value = 0;
+    int best_move = 0;
+    int best_value = INT_MIN;
+
+    // color for negamax calculation
+    int color = pos.side == white ? 1 : -1;
+
+    Movelist moves;
+    generate_legal_moves(pos, moves);
+
+    // copy board state
+    Position copy = pos;
+
+    for (int i = 0; i < moves.count; i++) {
+        if (pos.make_move(moves.moves[i])) {
+            value = -negamax(pos, depth);
+            
+            // restore board state
+            pos = copy;
+
+            if (value > best_value) {
+                best_move = moves.moves[i];
+                best_value = value;
+            }
+        }
+    }
+
+    cout << "bestmove " << Position::square_to_coord[decode_source(best_move)] << Position::square_to_coord[decode_target(best_move)];
+    if (decode_promotion(best_move)) {
+        int promoted_piece = decode_promotion(best_move);
+        // promoted to queen
+        if ((promoted_piece == Q || promoted_piece == q))
+            cout << 'q';
+        
+        // promoted to rook
+        else if ((promoted_piece == R || promoted_piece == r))
+            cout << 'r';
+        
+        // promoted to bishop
+        else if ((promoted_piece == B || promoted_piece == b))
+            cout << 'b';
+        
+        // promoted to knight
+        else if ((promoted_piece == N || promoted_piece == n))
+            cout << 'n';
+    }
+    cout << endl;
 }
 
 ////////////
@@ -259,7 +344,7 @@ void parse_go(Position &pos, string command) {
         depth = stoi(command.substr(index + 6));
     }
     else {
-        depth = 6;
+        depth = 3;
     }
 
     // todo time control
@@ -267,7 +352,7 @@ void parse_go(Position &pos, string command) {
     cout << "Depth: " << depth << endl;
 
     // search position
-    search_position(depth);
+    search_position(pos, depth);
 }
 
 /*
@@ -340,33 +425,38 @@ void uci_loop(Position &pos) {
 int main() {
     Position game_position;
 
-    // game_position.parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPpp/R3K2R b KQkq - 0 1"); 
-    // game_position.print_board();
-    // game_position.print_board_stats();
-
-    // //run_perft(game_position, 5);
-    // //run_perft_tests();
-
-    // int move = parse_move(game_position, "g2h1q");
-
-    // if (move) {
-    //     game_position.make_move(move);
-    // }
-    // else {
-    //     cout << "illegal move" << endl;
-    // }
+    game_position.parse_fen("rnb1kbnr/1pppqppp/p7/4N3/4P3/7P/PPPP1PP1/RNBQKB1R b KQkq - 0 4"); 
     
 
-    // game_position.print_board();
-    // game_position.print_board_stats();
+    
+    //run_perft(game_position, 6);
 
-    // parse_position(game_position, "position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4 e7e5 g1f3 b8c6 f1c4 f8c5 b1c3 g8f6");
-    // parse_position(game_position, "position startpos moves e2e4");
+    int debug = 0;
 
-    // game_position.print_board();
-    // game_position.print_board_stats();
+    if (debug) {
+        parse_position(game_position, "position startpos moves e2e4 e7e5 g1f3 g8f6 f3e5 d8e7 a2a3 e7e5");
+        game_position.print_board();
+        game_position.print_board_stats();
 
-    // parse_go(game_position, "go winc  123123 blcs 12313");
+        Movelist moves;
+        generate_legal_moves(game_position, moves);
 
-    uci_loop(game_position);
+        Position copy = game_position;
+
+        for (int i = 0; i < moves.count; i++)
+        {
+            cout << "move " << Position::square_to_coord[decode_source(moves.moves[i])] << Position::square_to_coord[decode_target(moves.moves[i])];
+            game_position.make_move(moves.moves[i]);
+
+            cout << " score " << -negamax(game_position, 3) << endl;
+
+            game_position = copy;
+        }
+        search_position(game_position, 3);
+    }
+    else {
+        uci_loop(game_position);
+    }
+
+    
 }

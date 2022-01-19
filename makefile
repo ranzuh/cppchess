@@ -7,7 +7,7 @@
 #CFLAGS = -std=c++11
 
 # uncomment to compile with optimizations (big performance boost)
-# CFLAGS = -Ofast -flto
+CFLAGS = -Ofast -flto
 
 all: chess
 
