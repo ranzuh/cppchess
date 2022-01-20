@@ -76,7 +76,11 @@ struct Position {
     // both king's squares
     int king_squares[2] = { e1, e8 };
 
-    int init_depth;
+    // e, p, n, b, r, q, k, P, N, B, R, Q, K
+    int piece_values[13] = { 0, -100, -350, -350, -525, -1000, -10000, 100, 350, 350, 525, 1000, 10000 };
+
+    // material score from white's perspective
+    int material_score = 0;
 
     // following defined in board.cpp
     void print_board();
@@ -85,6 +89,7 @@ struct Position {
     void print_board_stats();
     int make_move(int move);
     uint64_t perft(int depth);
+    void set_material();
 };
 
 #endif

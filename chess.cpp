@@ -129,20 +129,24 @@ void run_perft_tests() {
 // e, p, n, b, r, q, k, P, N, B, R, Q, K
 int piece_values[] = { 0, -100, -350, -350, -525, -1000, -10000, 100, 350, 350, 525, 1000, 10000 };
 
-inline int evaluate_position(Position &pos) {
-    int score = 0;
-    for (int square = 0; square < 128; square++) {
-        if (!(square & 0x88)) {
-            score += piece_values[pos.board[square]];
-            //cout << pos.board[square] << " " << piece_values[pos.board[square]] << endl;
-        }
-    }
-    return pos.side == white ? score : -score;
+int evaluate_position(Position &pos) {
+    // int score = 0;
+    // for (int square = 0; square < 128; square++) {
+    //     if (!(square & 0x88)) {
+    //         score += piece_values[pos.board[square]];
+    //         //cout << pos.board[square] << " " << piece_values[pos.board[square]] << endl;
+    //     }
+    // }
+    // assert(pos.side == white ? pos.material_score == score : -pos.material_score == -score);
+    return pos.side == white ? pos.material_score : -pos.material_score;
 }
+
+int nodes = 0;
 
 // color +1 for white, -1 for black
 int negamax(Position &pos, int depth) {
     if (depth == 0) {
+        nodes += 1;
         return evaluate_position(pos);
     }
     int value = INT_MIN;
@@ -156,6 +160,7 @@ int negamax(Position &pos, int depth) {
     for (int i = 0; i < moves.count; i++) {
         if (pos.make_move(moves.moves[i])) {
             value = max(value, -negamax(pos, depth - 1));
+
             // restore board state
             pos = copy;
         }
@@ -180,9 +185,11 @@ void search_position(Position &pos, int depth) {
     // copy board state
     Position copy = pos;
 
+    auto start = chrono::high_resolution_clock::now();
     for (int i = 0; i < moves.count; i++) {
         if (pos.make_move(moves.moves[i])) {
-            value = -negamax(pos, depth);
+            //cout << i << endl;
+            value = -negamax(pos, depth - 1);
             
             // restore board state
             pos = copy;
@@ -193,6 +200,11 @@ void search_position(Position &pos, int depth) {
             }
         }
     }
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+
+    // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928
+    cout << "info depth " << depth << " nodes " << nodes << " nps " << int(1000.0 * nodes / duration.count()) << endl;
 
     cout << "bestmove " << Position::square_to_coord[decode_source(best_move)] << Position::square_to_coord[decode_target(best_move)];
     if (decode_promotion(best_move)) {
@@ -344,7 +356,7 @@ void parse_go(Position &pos, string command) {
         depth = stoi(command.substr(index + 6));
     }
     else {
-        depth = 3;
+        depth = 4;
     }
 
     // todo time control
@@ -431,28 +443,29 @@ int main() {
     
     //run_perft(game_position, 6);
 
-    int debug = 0;
+    int debug = 1;
 
     if (debug) {
-        parse_position(game_position, "position startpos moves e2e4 e7e5 g1f3 g8f6 f3e5 d8e7 a2a3 e7e5");
+        parse_position(game_position, "position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
         game_position.print_board();
         game_position.print_board_stats();
 
-        Movelist moves;
-        generate_legal_moves(game_position, moves);
+        // Movelist moves;
+        // generate_legal_moves(game_position, moves);
 
-        Position copy = game_position;
+        // Position copy = game_position;
 
-        for (int i = 0; i < moves.count; i++)
-        {
-            cout << "move " << Position::square_to_coord[decode_source(moves.moves[i])] << Position::square_to_coord[decode_target(moves.moves[i])];
-            game_position.make_move(moves.moves[i]);
+        // for (int i = 0; i < moves.count; i++)
+        // {
+        //     cout << "move " << Position::square_to_coord[decode_source(moves.moves[i])] << Position::square_to_coord[decode_target(moves.moves[i])];
+        //     game_position.make_move(moves.moves[i]);
 
-            cout << " score " << -negamax(game_position, 3) << endl;
+        //     cout << " score " << -negamax(game_position, 0) << endl;
 
-            game_position = copy;
-        }
-        search_position(game_position, 3);
+        //     game_position = copy;
+        // }
+        search_position(game_position, 4);
+        cout << nodes << endl;
     }
     else {
         uci_loop(game_position);

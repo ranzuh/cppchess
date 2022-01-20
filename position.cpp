@@ -105,6 +105,17 @@ void Position::reset_board() {
     }
 }
 
+void Position::set_material() {
+    int score = 0;
+    for (int square = 0; square < 128; square++) {
+        if (!(square & 0x88)) {
+            score += piece_values[board[square]];
+            //cout << pos.board[square] << " " << piece_values[pos.board[square]] << endl;
+        }
+    }
+    material_score = score;
+}
+
 // parses fen string and sets it to board
 void Position::parse_fen(string fen) {
     reset_board();
@@ -203,6 +214,8 @@ void Position::parse_fen(string fen) {
     } else {
         enpassant = no_sq;
     }
+
+    set_material();
 }
 
 // print board status infos
@@ -214,7 +227,8 @@ void Position::print_board_stats() {
     cout << (castle & kc ? 'k' : '-');
     cout << (castle & qc ? 'q' : '-') << endl;
     cout << "    Enpassant:       " << (enpassant != no_sq ? square_to_coord[enpassant] : "-") << endl;
-    cout << "    Kings square:    " << square_to_coord[king_squares[side]] << endl << endl;
+    cout << "    Kings square:    " << square_to_coord[king_squares[side]] << endl;
+    cout << "    Material:        " << material_score << endl << endl;
 }
 
 // make a move on the board if its legal
@@ -235,10 +249,14 @@ int Position::make_move(int move) {
     int from_square = decode_source(move);
     int to_square = decode_target(move);
     int promoted_piece = decode_promotion(move);
-    //int is_capture = decode_capture(move);
+    int is_capture = decode_capture(move);
     int is_enpassant = decode_enpassant(move);
     int is_double_pawn = decode_double_pawn(move);
     int is_castling = decode_castling(move);
+
+    // store piece
+    int source_piece = board[from_square];
+    int target_piece = board[to_square];
 
     // make move
     board[to_square] = board[from_square];
@@ -247,6 +265,10 @@ int Position::make_move(int move) {
     // update king square
     if (board[to_square] == K || board[to_square] == k) {
         king_squares[side] = to_square;
+    }
+
+    if (is_capture) {
+        material_score -= piece_values[target_piece];
     }
 
     // unmake move if king under check
@@ -269,10 +291,13 @@ int Position::make_move(int move) {
     if (promoted_piece != e) {
         board[to_square] = promoted_piece;
         //board[from_square] = e;
+        material_score += piece_values[promoted_piece];
+        material_score -= piece_values[source_piece];
     }
     else if (is_enpassant) {
         //board[to_square] = board[from_square];
         //board[from_square] = e;
+        side == white ? material_score -= piece_values[board[to_square + 16]] : material_score -= piece_values[board[to_square - 16]];
         side == white ? board[to_square + 16] = e : board[to_square - 16] = e;
     }
     else if (is_double_pawn) {
