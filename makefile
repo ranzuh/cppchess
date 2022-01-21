@@ -4,10 +4,10 @@
 #       <tab> command
 
 # uncomment if needed
-#CFLAGS = -std=c++11
+CFLAGS = -std=c++11
 
 # uncomment to compile with optimizations (big performance boost)
-OPTFLAGS = -Ofast -flto
+# OPTFLAGS = -Ofast -flto
 
 all: chess
 

@@ -231,19 +231,6 @@ void Position::print_board_stats() {
     cout << "    Material:        " << material_score << endl << endl;
 }
 
-void unmake_move(int move) {
-    // decode move
-    int from_square = decode_source(move);
-    int to_square = decode_target(move);
-    int promoted_piece = decode_promotion(move);
-    int is_capture = decode_capture(move);
-    int is_enpassant = decode_enpassant(move);
-    int is_double_pawn = decode_double_pawn(move);
-    int is_castling = decode_castling(move);
-
-    
-}
-
 // make a move on the board if its legal
 // returns 1 if legal, 0 if illegal
 // todo differentiate between captures and all_moves
