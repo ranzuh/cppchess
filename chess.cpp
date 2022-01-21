@@ -16,7 +16,7 @@ string start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 
 string tricky_position = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
 
 // perft test
-uint64_t perft(Position pos, int depth, bool divide) {
+uint64_t perft(Position &pos, int depth, bool divide) {
     Movelist moves;
     int n_moves;
     uint64_t nodes = 0;
@@ -71,7 +71,7 @@ uint64_t perft(Position pos, int depth, bool divide) {
     return nodes;
 }
 
-void run_perft(Position pos, int depth) {
+void run_perft(Position &pos, int depth) {
     auto start = chrono::high_resolution_clock::now();
     uint64_t result = perft(pos, depth, true);
     auto stop = chrono::high_resolution_clock::now();
@@ -141,43 +141,124 @@ int evaluate_position(Position &pos) {
     return pos.side == white ? pos.material_score : -pos.material_score;
 }
 
-int nodes = 0;
+uint64_t nodes = 0;
+
+uint64_t quiesc_nodes = 0;
+
+int ply = 0;
+
+int quiescence_search(Position &pos, int alpha, int beta) {
+    // get lower bound score
+    int stand_pat = evaluate_position(pos);
+
+    if (stand_pat >= beta) {
+        return beta;
+    }
+
+    if (stand_pat > alpha) {
+        alpha = stand_pat;
+    }
+
+    // copy board state
+    Position copy = pos;
+
+    // loop over all captures
+    Movelist moves;
+    generate_legal_moves(pos, moves);
+
+    for (int i = 0; i < moves.count; i++) {
+        if (decode_capture(moves.moves[i])) {
+            if (pos.make_move(moves.moves[i])) {
+                nodes++;
+                quiesc_nodes++;
+                ply++;
+                int value = -quiescence_search(pos, -beta, -alpha);
+                ply--;
+                if (value >= beta) {
+                    return beta;
+                }
+                // restore board state
+                pos = copy;
+
+                if (value > alpha) {
+                    alpha = value;
+                }
+            }
+        }
+    }
+
+    return alpha;
+}
 
 // color +1 for white, -1 for black
-int negamax(Position &pos, int depth) {
+int negamax(Position &pos, int depth, int alpha, int beta) {
     if (depth == 0) {
-        nodes += 1;
-        return evaluate_position(pos);
+        //nodes += 1;
+        return quiescence_search(pos, alpha, beta);
+        //return evaluate_position(pos);
     }
-    int value = INT_MIN;
+    int value = -500000;
 
     Movelist moves;
     generate_legal_moves(pos, moves);
+
+    int king_attacked = is_square_attacked(pos, pos.king_squares[pos.side], !pos.side);
+
+    // if no legal moves
+    if (moves.count == 0) {
+        // king is in check - checkmate
+        if (king_attacked) {
+            //cout << "found mate at ply " << ply << endl;
+            //nodes += 1;
+            return -50000 + ply;
+        }
+        // king is not in check - stalemate
+        else {
+            //cout << "found stalemate at ply " << ply << endl;
+            //nodes += 1;
+            return 0;
+        }
+    }
 
     // copy board state
     Position copy = pos;
 
     for (int i = 0; i < moves.count; i++) {
         if (pos.make_move(moves.moves[i])) {
-            value = max(value, -negamax(pos, depth - 1));
-
+            nodes++;
+            ply++;  
+            //value = max(value, -negamax(pos, depth - 1, -beta, -alpha));
+            value = -negamax(pos, depth - 1, -beta, -alpha);
+            ply--;
+            //alpha = max(alpha, value);
+            if (value >= beta) {
+                return beta;
+            }
             // restore board state
             pos = copy;
+            // if (alpha >= beta) {
+            //     break;
+            // }
+            if (value > alpha) {
+                alpha = value;
+            }
         }
     }
 
-    return value;
+    return alpha;
 }
 
 // search position for the best move
 void search_position(Position &pos, int depth) {
     // best move placeholder
+    nodes = 0;
+    quiesc_nodes = 0;
     int value = 0;
     int best_move = 0;
-    int best_value = INT_MIN;
+    int best_value = -500000;
 
     // color for negamax calculation
-    int color = pos.side == white ? 1 : -1;
+    //int color = pos.side == white ? 1 : -1;
 
     Movelist moves;
     generate_legal_moves(pos, moves);
@@ -185,27 +266,36 @@ void search_position(Position &pos, int depth) {
     // copy board state
     Position copy = pos;
 
+    // start timing
     auto start = chrono::high_resolution_clock::now();
-    for (int i = 0; i < moves.count; i++) {
-        if (pos.make_move(moves.moves[i])) {
-            //cout << i << endl;
-            value = -negamax(pos, depth - 1);
-            
-            // restore board state
-            pos = copy;
 
-            if (value > best_value) {
-                best_move = moves.moves[i];
-                best_value = value;
+    // iterative deepening
+    //for (int iter_depth = 1; iter_depth <= depth; iter_depth++) {
+
+        // go through legal moves
+        for (int i = 0; i < moves.count; i++) {
+            if (pos.make_move(moves.moves[i])) {
+                nodes++;
+                //cout << i << endl;
+                ply++;
+                value = -negamax(pos, depth - 1, -500000, 500000);
+                ply--;
+                // restore board state
+                pos = copy;
+
+                if (value > best_value) {
+                    best_move = moves.moves[i];
+                    best_value = value;
+                }
             }
         }
-    }
-    auto stop = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+        // stop clock
+        auto stop = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
 
-    // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928
-    cout << "info depth " << depth << " nodes " << nodes << " nps " << int(1000.0 * nodes / duration.count()) << endl;
-
+        // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928
+        cout << "info depth " << depth << " score cp " << best_value << " nodes " << nodes << " nps " << max(0, int(1000.0 * nodes / duration.count())) << " pv " << endl;
+    //}
     cout << "bestmove " << Position::square_to_coord[decode_source(best_move)] << Position::square_to_coord[decode_target(best_move)];
     if (decode_promotion(best_move)) {
         int promoted_piece = decode_promotion(best_move);
@@ -356,12 +446,12 @@ void parse_go(Position &pos, string command) {
         depth = stoi(command.substr(index + 6));
     }
     else {
-        depth = 4;
+        depth = 5;
     }
 
     // todo time control
 
-    cout << "Depth: " << depth << endl;
+    //cout << "Depth: " << depth << endl;
 
     // search position
     search_position(pos, depth);
@@ -403,15 +493,15 @@ void uci_loop(Position &pos) {
         // parse UCI "position" command
         else if (input.find("position") != string::npos) {
             parse_position(pos, input);
-            pos.print_board();
-            pos.print_board_stats();
+            // pos.print_board();
+            // pos.print_board_stats();
         }
         
         // parse UCI "ucinewgame" command
         else if (input.find("ucinewgame") != string::npos) {
             parse_position(pos, "position startpos");
-            pos.print_board();
-            pos.print_board_stats();
+            // pos.print_board();
+            // pos.print_board_stats();
         }
         
         // parse UCI "go" command
@@ -446,7 +536,7 @@ int main() {
     int debug = 1;
 
     if (debug) {
-        parse_position(game_position, "position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+        parse_position(game_position, "position startpos");
         game_position.print_board();
         game_position.print_board_stats();
 
@@ -460,12 +550,13 @@ int main() {
         //     cout << "move " << Position::square_to_coord[decode_source(moves.moves[i])] << Position::square_to_coord[decode_target(moves.moves[i])];
         //     game_position.make_move(moves.moves[i]);
 
-        //     cout << " score " << -negamax(game_position, 0) << endl;
+        //     cout << " score " << -negamax(game_position, 5, -500000, 500000) << endl;
 
         //     game_position = copy;
         // }
-        search_position(game_position, 4);
-        cout << nodes << endl;
+        search_position(game_position, 6);
+        cout << "Quiescence search nodes: " << quiesc_nodes << endl;
+        //run_perft(game_position, 5);
     }
     else {
         uci_loop(game_position);

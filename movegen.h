@@ -1,3 +1,6 @@
+#ifndef MOVEGEN_H
+#define MOVEGEN_H
+
 struct Movelist
 {
     int moves[256];
@@ -40,3 +43,6 @@ int generate_legal_moves(Position &pos, Movelist &moves);
 
 void print_movelist(Movelist &moves);
 
+int is_square_attacked(Position &pos, int square, int side);
+
+#endif
