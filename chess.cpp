@@ -9,6 +9,7 @@
 #include <cassert>
 #include <vector>
 #include <climits>
+#include <algorithm>
 
 using namespace std;
 
@@ -120,6 +121,30 @@ void run_perft_tests() {
     assert(result ==  2103487);
 
     cout << endl << "Perft tests passed" << endl;
+}
+
+string get_move_string(int move) {
+    string move_string = "";
+    move_string += Position::square_to_coord[decode_source(move)] + Position::square_to_coord[decode_target(move)];
+    if (decode_promotion(move)) {
+        int promoted_piece = decode_promotion(move);
+        // promoted to queen
+        if ((promoted_piece == Q || promoted_piece == q))
+            move_string += 'q';
+        
+        // promoted to rook
+        else if ((promoted_piece == R || promoted_piece == r))
+            move_string += 'r';
+        
+        // promoted to bishop
+        else if ((promoted_piece == B || promoted_piece == b))
+            move_string += 'b';
+        
+        // promoted to knight
+        else if ((promoted_piece == N || promoted_piece == n))
+            move_string += 'n';
+    }
+    return move_string;
 }
 
 /////////////////////////
@@ -269,11 +294,94 @@ int evaluate_position(Position &pos) {
     //return pos.side == white ? pos.material_score : -pos.material_score;
 }
 
+/*
+    Most valuable victim & less valuable attacker
+                          
+          (Victims) Pawn Knight Bishop   Rook  Queen   King
+ (Attackers)
+        Pawn        105    205    305    405    505    605
+      Knight        104    204    304    404    504    604
+      Bishop        103    203    303    403    503    603
+        Rook        102    202    302    402    502    602
+       Queen        101    201    301    401    501    601
+        King        100    200    300    400    500    600
+*/
+
+// MVV LVA [attacker][victim] eg. P x q
+int mvv_lva[13][13] = {
+    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,
+ 	0, 105, 205, 305, 405, 505, 605,  105, 205, 305, 405, 505, 605,
+	0, 104, 204, 304, 404, 504, 604,  104, 204, 304, 404, 504, 604,
+	0, 103, 203, 303, 403, 503, 603,  103, 203, 303, 403, 503, 603,
+	0, 102, 202, 302, 402, 502, 602,  102, 202, 302, 402, 502, 602,
+	0, 101, 201, 301, 401, 501, 601,  101, 201, 301, 401, 501, 601,
+	0, 100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600,
+
+	0, 105, 205, 305, 405, 505, 605,  105, 205, 305, 405, 505, 605,
+	0, 104, 204, 304, 404, 504, 604,  104, 204, 304, 404, 504, 604,
+	0, 103, 203, 303, 403, 503, 603,  103, 203, 303, 403, 503, 603,
+	0, 102, 202, 302, 402, 502, 602,  102, 202, 302, 402, 502, 602,
+	0, 101, 201, 301, 401, 501, 601,  101, 201, 301, 401, 501, 601,
+	0, 100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600,
+};
+
+// score a move for move ordering purposes
+int score_move(Position &pos, int move) {
+    // score captures
+    if (decode_capture(move)) {
+        int source_piece = pos.board[decode_source(move)];
+        // if target is empty its en passant move so set target piece to pawn
+        int target_piece = pos.board[decode_target(move)] == e ? P : pos.board[decode_target(move)];
+
+        // score capture by MVV-LVA lookup
+        // cout << Position::square_to_coord[decode_source(move)] << Position::square_to_coord[decode_target(move)] << endl;
+        // cout << "source piece: " << Position::ascii_pieces[source_piece] << endl;
+        // cout << "target piece: " << Position::ascii_pieces[target_piece] << endl;
+        // cout << "score: " << mvv_lva[source_piece][target_piece] << endl;
+        return mvv_lva[source_piece][target_piece];
+    }
+    // score quiet moves
+    else {
+        return 0;
+    }
+}
+
+// prints move scores of moves in movelist
+void print_move_scores(Position &pos, Movelist &moves) {
+    for (int i = 0; i < moves.count; i++) {
+        cout << "move: " << get_move_string(moves.moves[i]) << " score: " << score_move(pos, moves.moves[i]) << endl;
+    }
+}
+
+// use struct to pass position to comparison function
+struct Compare_move_scores {
+    Position pos;
+    Compare_move_scores(Position &pos) {
+        this->pos = pos;
+    }
+    // sort moves in descending order
+    bool operator () (int move1, int move2) {
+        return score_move(this->pos, move1) > score_move(this->pos, move2);
+    }
+};
+
+// bool compare_move_scores(Position &pos, int move1, int move2) {
+//     return score_move(pos, move1) < score_move(pos, move2);
+// }
+
+void sort_moves(Position &pos, Movelist &moves) {
+    //vector<int> moves_vector;
+    //moves_vector.assign(moves.moves, moves.moves + moves.count);
+    sort(moves.moves, moves.moves + moves.count, Compare_move_scores(pos));
+}
+
 uint64_t nodes = 0;
 
 uint64_t quiesc_nodes = 0;
 
 int ply = 0;
+
+int max_ply = 0;
 
 int quiescence_search(Position &pos, int alpha, int beta) {
     // get lower bound score
@@ -294,12 +402,19 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     Movelist moves;
     generate_legal_moves(pos, moves);
 
+    // sort moves
+    sort_moves(pos, moves);
+
     for (int i = 0; i < moves.count; i++) {
         if (decode_capture(moves.moves[i])) {
             if (pos.make_move(moves.moves[i])) {
                 nodes++;
                 quiesc_nodes++;
                 ply++;
+                // if (max_ply < ply) {
+                //     max_ply = ply;
+                //     cout << max_ply << " ply reached" << endl;
+                // }
                 int value = -quiescence_search(pos, -beta, -alpha);
                 ply--;
                 if (value >= beta) {
@@ -332,6 +447,11 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
 
     int king_attacked = is_square_attacked(pos, pos.king_squares[pos.side], !pos.side);
 
+    // are we in check? if so, we want to search deeper
+	if (king_attacked) {
+        depth++;
+    }
+
     // if no legal moves
     if (moves.count == 0) {
         // king is in check - checkmate
@@ -347,6 +467,9 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
             return 0;
         }
     }
+
+    // sort moves
+    sort_moves(pos, moves);
 
     // copy board state
     Position copy = pos;
@@ -390,6 +513,8 @@ void search_position(Position &pos, int depth) {
 
     Movelist moves;
     generate_legal_moves(pos, moves);
+
+    sort_moves(pos, moves);
 
     // copy board state
     Position copy = pos;
@@ -574,7 +699,7 @@ void parse_go(Position &pos, string command) {
         depth = stoi(command.substr(index + 6));
     }
     else {
-        depth = 5;
+        depth = 4;
     }
 
     // todo time control
@@ -655,21 +780,19 @@ void uci_loop(Position &pos) {
 int main() {
     Position game_position;
 
-    game_position.parse_fen("rnb1kbnr/1pppqppp/p7/4N3/4P3/7P/PPPP1PP1/RNBQKB1R b KQkq - 0 4"); 
-    
-
-    
     //run_perft(game_position, 6);
 
-    int debug = 1;
+    int debug = 0;
 
     if (debug) {
-        parse_position(game_position, "position fen 8/4k3/8/8/8/p7/4K3/8 w - - 0 1");
+        game_position.parse_fen(tricky_position);
+        //game_position.enpassant = c6;
+        //parse_position(game_position, "position startpos");
         game_position.print_board();
         game_position.print_board_stats();
 
-        // Movelist moves;
-        // generate_legal_moves(game_position, moves);
+        Movelist moves;
+        generate_legal_moves(game_position, moves);
 
         // Position copy = game_position;
 
@@ -682,11 +805,16 @@ int main() {
 
         //     game_position = copy;
         // }
-        //search_position(game_position, 6);
-        //cout << "Quiescence search nodes: " << quiesc_nodes << endl;
+        search_position(game_position, 4);
+        cout << "Quiescence search nodes: " << quiesc_nodes << endl;
         //run_perft(game_position, 5);
 
-        cout << evaluate_position(game_position) << endl;
+        //sort_moves(game_position, moves);
+
+        //print_move_scores(game_position, moves);
+
+        
+
     }
     else {
         uci_loop(game_position);
