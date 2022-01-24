@@ -82,6 +82,9 @@ struct Position {
     // material score from white's perspective
     int material_score = 0;
 
+    // "almost unique" position identifier aka hash key or position key
+    uint64_t hash_key;
+
     // following defined in board.cpp
     void print_board();
     void reset_board();

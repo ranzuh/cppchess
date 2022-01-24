@@ -116,6 +116,9 @@ void Position::set_material() {
     material_score = score;
 }
 
+// generate "almost unique" position ID aka hash key from scratch
+uint64_t generate_hash_key(Position &pos);
+
 // parses fen string and sets it to board
 void Position::parse_fen(string fen) {
     reset_board();
@@ -216,6 +219,9 @@ void Position::parse_fen(string fen) {
     }
 
     set_material();
+
+    // set hash key
+    hash_key = generate_hash_key(*this);
 }
 
 // print board status infos
@@ -228,7 +234,8 @@ void Position::print_board_stats() {
     cout << (castle & qc ? 'q' : '-') << endl;
     cout << "    Enpassant:       " << (enpassant != no_sq ? square_to_coord[enpassant] : "-") << endl;
     cout << "    Kings square:    " << square_to_coord[king_squares[side]] << endl;
-    cout << "    Material:        " << material_score << endl << endl;
+    cout << "    Material:        " << material_score << endl;
+    cout << "    Hash key:        " << hex << hash_key << dec << endl << endl;
 }
 
 // make a move on the board if its legal
@@ -347,6 +354,27 @@ int Position::make_move(int move) {
 
     // change side
     side = !side;
+
+    //
+    // ====== debug hash key incremental update ======= //
+    //
+    
+    // build hash key for the updated position (after move is made) from scratch Nodes per second: 18267536
+    hash_key = generate_hash_key(*this);
+    
+    // in case if hash key built from scratch doesn't match
+    // the one that was incrementally updated we interrupt execution
+    // if (hash_key != hash_from_scratch)
+    // {
+    //     cout << "Make move" << endl;
+    //     cout << "move: " << get_move_string2(move) << endl;
+    //     print_board();
+    //     print_board_stats();
+    //     cout << "hash key should be: " << hex << hash_from_scratch << dec << endl;
+    //     string mystring;
+    //     cin >> mystring;
+    // }
+
     // legal move
     return 1;
 }

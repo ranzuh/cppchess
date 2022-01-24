@@ -4,27 +4,32 @@
 #       <tab> command
 
 # uncomment if needed
-CFLAGS = -std=c++11
+# CFLAGS = -std=c++11
 
 # uncomment to compile with optimizations (big performance boost)
 # OPTFLAGS = -Ofast -flto
 
-all: chess
+all: 
+	g++ -std=c++11 -Wall chess.cpp position.cpp movegen.cpp -o cppchess
 
-chess: chess.o position.o movegen.o
-	g++ $(CFLAGS) chess.o position.o movegen.o -o chess
+release:
+	g++ -std=c++11 -Ofast -flto chess.cpp position.cpp movegen.cpp -o cppchess
 
-chess.o: chess.cpp
-	g++ $(CFLAGS) -c chess.cpp
 
-position.o: position.cpp position.h
-	g++ $(CFLAGS) -c position.cpp
+# cppchess: chess.o position.o movegen.o
+# 	g++ $(CFLAGS) chess.o position.o movegen.o -o cppchess
 
-movegen.o: movegen.cpp movegen.h
-	g++ $(CFLAGS) -c movegen.cpp
+# chess.o: chess.cpp
+# 	g++ $(CFLAGS) -c chess.cpp
+
+# position.o: position.cpp position.h
+# 	g++ $(CFLAGS) -c position.cpp
+
+# movegen.o: movegen.cpp movegen.h
+# 	g++ $(CFLAGS) -c movegen.cpp
 
 run:
-	./chess
+	./cppchess
 
 clean:
 	rm *.o
