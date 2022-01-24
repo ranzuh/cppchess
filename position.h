@@ -85,6 +85,10 @@ struct Position {
     // "almost unique" position identifier aka hash key or position key
     uint64_t hash_key;
 
+    // repetitions
+    int rep_index = 0;
+    uint64_t rep_stack[1024] = { 0 };
+
     // following defined in board.cpp
     void print_board();
     void reset_board();

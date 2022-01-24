@@ -361,6 +361,10 @@ int Position::make_move(int move) {
     
     // build hash key for the updated position (after move is made) from scratch Nodes per second: 18267536
     hash_key = generate_hash_key(*this);
+
+    // increment repetition index & store hash key
+    rep_index += 1;
+    rep_stack[rep_index] = hash_key;
     
     // in case if hash key built from scratch doesn't match
     // the one that was incrementally updated we interrupt execution

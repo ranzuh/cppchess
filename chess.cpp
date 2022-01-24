@@ -689,6 +689,11 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     // get lower bound score
     int stand_pat = evaluate_position(pos);
 
+    // ensure no overflow of arrays depending on max_depth
+    if (ply > max_depth - 1) {
+        return stand_pat;
+    }
+
     if (stand_pat >= beta) {
         return beta;
     }
@@ -719,6 +724,7 @@ int quiescence_search(Position &pos, int alpha, int beta) {
                 // }
                 int value = -quiescence_search(pos, -beta, -alpha);
                 ply--;
+                pos.rep_index -= 1;
                 if (value >= beta) {
                     return beta;
                 }
@@ -744,6 +750,12 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
     // init pv length
     pv_length[ply] = ply;
 
+    // are we in check? if so, we want to search deeper
+    int king_attacked = is_square_attacked(pos, pos.king_squares[pos.side], !pos.side);
+	if (king_attacked) {
+        depth += 1;
+    }
+
     int hash_flag = hash_flag_alpha;
     int value = read_hash_entry(pos.hash_key, alpha, beta, depth);
     if (value != no_hash_entry) {
@@ -758,6 +770,14 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
         return value;
     }
 
+    // check repetitions
+    if (ply) {
+        for (int i = 0; i < pos.rep_index; i++) {
+            if (pos.rep_stack[i] == pos.hash_key)
+                return 0;
+        }
+    }
+
     if (depth == 0) {
         //nodes += 1;
         value = quiescence_search(pos, alpha, beta);
@@ -769,13 +789,6 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
 
     Movelist moves;
     generate_legal_moves(pos, moves);
-
-    int king_attacked = is_square_attacked(pos, pos.king_squares[pos.side], !pos.side);
-
-    // are we in check? if so, we want to search deeper
-	// if (king_attacked) {
-    //     depth++;
-    // }
 
     // if no legal moves
     if (moves.count == 0) {
@@ -818,10 +831,12 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
             nodes++;
             ply++;  
             //value = max(value, -negamax(pos, depth - 1, -beta, -alpha));
-            
+
             value = -negamax(pos, depth - 1, -beta, -alpha);
             leftmost = 0;
+
             ply--;
+            pos.rep_index -= 1;
             //alpha = max(alpha, value);
             
             // restore board state
@@ -865,9 +880,13 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
 
 // search position for the best move
 void search_position(Position &pos, int depth) {
+    // clear hash table, good idea or not?
+    clear_hash_table();
+
     int score = 0;
 
     // reset nodes counters
+    table_hits = 0;
     nodes = 0;
     quiesc_nodes = 0;
 
@@ -985,6 +1004,9 @@ void parse_position(Position &pos, string command) {
 
     // parse moves
     if (command.find("moves") != string::npos) {
+        pos.rep_index = 0;
+        memset(pos.rep_stack, 0, sizeof(pos.rep_stack));
+
         string moves_substring = command.substr(command.find("moves") + 6);
 
         // make vector of parsed moves
@@ -1114,17 +1136,22 @@ void uci_loop(Position &pos) {
 int main() {
     init_random_keys();
     Position game_position;
+    clear_hash_table();
 
     //run_perft(game_position, 6);
 
     int debug = 1;
 
     if (debug) {
+        // game_position.parse_fen("6rk/8/8/8/8/8/8/RK6 w - - 0 1");
+        // game_position.print_board();
+        // game_position.print_board_stats();
+        // parse_position(game_position, "position fen 8/6k1/5p2/6p1/2P4p/P2Q3P/2P2PP1/4q1K1 w - - 3 41");
+        // parse_position(game_position, "position fen 8/6k1/5p2/6p1/2P4p/P2Q3P/2P2PP1/4q1K1 w - - 3 41 moves d3f1 e1c3");
         game_position.parse_fen(tricky_position);
         game_position.print_board();
         game_position.print_board_stats();
-        clear_hash_table();
-        search_position(game_position, 8);
+        search_position(game_position, 6);
         cout << "Quiescence search nodes: " << quiesc_nodes << endl;
         cout << "Table hits:              " << table_hits << endl;
 
