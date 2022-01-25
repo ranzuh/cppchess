@@ -87,7 +87,7 @@ struct Position {
 
     // repetitions
     int rep_index = 0;
-    uint64_t rep_stack[1024] = { 0 };
+    uint64_t rep_stack[512] = { 0 };
 
     // following defined in board.cpp
     void print_board();

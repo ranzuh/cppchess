@@ -748,7 +748,7 @@ int table_hits = 0;
 // negamax search with alpha-beta pruning
 int negamax(Position &pos, int depth, int alpha, int beta) {
     // init pv length
-    pv_length[ply] = ply;
+    // pv_length[ply] = ply;
 
     // are we in check? if so, we want to search deeper
     int king_attacked = is_square_attacked(pos, pos.king_squares[pos.side], !pos.side);
@@ -758,7 +758,7 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
 
     int hash_flag = hash_flag_alpha;
     int value = read_hash_entry(pos.hash_key, alpha, beta, depth);
-    if (value != no_hash_entry) {
+    if (ply && value != no_hash_entry) {
         table_hits++;
         return value;
     }
@@ -797,7 +797,7 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
             //cout << "found mate at ply " << ply << endl;
             //nodes += 1;
             value = -49000 + ply;
-            //write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
+            write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
             return value;
         }
         // king is not in check - stalemate
@@ -805,7 +805,7 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
             //cout << "found stalemate at ply " << ply << endl;
             //nodes += 1;
             value = 0;
-            //write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
+            write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
             return value;
         }
     }
@@ -827,6 +827,8 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
         //     print_move_scores(pos, moves);
         //     cout << endl;
         // }
+        // if (moves.moves[i] == encode_move(h3, g2, 0, 1, 0, 0, 0) && depth==4) 
+        //     cout << "h3g2 played" << endl;
         if (pos.make_move(moves.moves[i])) {
             nodes++;
             ply++;  
@@ -851,6 +853,17 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
                     killer_moves[0][ply] = moves.moves[i];
                 }
                 write_hash_entry(pos.hash_key, beta, depth, hash_flag_beta);
+
+                if (pv_length[ply]) {
+                    pv_length[ply] = 1;
+                    // copy deeper pv line
+                    for (int index = 0; index < pv_length[ply + 1]; index++) {
+                        // copy deeper pv move to current table
+                        pv_table[ply][ply + 1 + index] = pv_table[ply + 1][ply + 1 + index];
+                        pv_length[ply]++;
+                    }
+                }
+                
                 return beta;
             }
             // if (alpha >= beta) {
@@ -860,20 +873,33 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
                 alpha = value;
                 // add pv move to pv table
                 pv_table[ply][ply] = moves.moves[i];
+                pv_length[ply] = 1;
 
-                // copy deeper pv line
-                for (int next_ply = ply + 1; next_ply < pv_length[ply + 1]; next_ply++) {
-                    // copy deeper pv move to current table
-                    pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
-                }
+                // // copy deeper pv line
+                // for (int index = 0; index < pv_length[ply + 1]; index++) {
+                //     // copy deeper pv move to current table
+                //     pv_table[ply][ply + 1 + index] = pv_table[ply + 1][ply + 1 + index];
+                //     pv_length[ply]++;
+                // }
                 
                 // increment pv length for current ply
-                pv_length[ply] = pv_length[ply + 1];
+                //pv_length[ply] = pv_length[ply + 1];
 
                 hash_flag = hash_flag_exact;
             }
         }
     }
+    if (pv_length[ply]) {
+        pv_length[ply] = 1;
+
+        // copy deeper pv line
+        for (int index = 0; index < pv_length[ply + 1]; index++) {
+            // copy deeper pv move to current table
+            pv_table[ply][ply + 1 + index] = pv_table[ply + 1][ply + 1 + index];
+            pv_length[ply]++;
+        }
+    }
+    
     write_hash_entry(pos.hash_key, alpha, depth, hash_flag);
     return alpha;
 }
@@ -911,7 +937,7 @@ void search_position(Position &pos, int depth) {
         // stop clock
         auto stop = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-
+        assert(pv_table[0][current_depth-1] == pv_table[current_depth-1][current_depth-1]);
         // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5
         cout << "info depth " << current_depth << " score cp " << score << " nodes " << nodes << " nps " << uint64_t(1000000.0 * nodes / duration.count()) << " pv ";
         for (int i = 0; i < pv_length[0]; i++) {
@@ -919,8 +945,6 @@ void search_position(Position &pos, int depth) {
         }
         cout << endl;
     }
-
-    
     cout << "bestmove " << get_move_string(pv_table[0][0]) << endl; 
 }
 
@@ -1151,9 +1175,15 @@ int main() {
         game_position.parse_fen(tricky_position);
         game_position.print_board();
         game_position.print_board_stats();
-        search_position(game_position, 6);
+
+        search_position(game_position, 5);
         cout << "Quiescence search nodes: " << quiesc_nodes << endl;
         cout << "Table hits:              " << table_hits << endl;
+
+        // search_position(game_position, 8);
+        // cout << "Quiescence search nodes: " << quiesc_nodes << endl;
+        // cout << "Table hits:              " << table_hits << endl;
+        // cout << sizeof(Position) << endl;
 
         //run_perft(game_position, 5);
 
