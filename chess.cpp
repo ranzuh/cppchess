@@ -759,8 +759,8 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
     int hash_flag = hash_flag_alpha;
     int value = read_hash_entry(pos.hash_key, alpha, beta, depth);
     if (ply && value != no_hash_entry) {
-        table_hits++;
-        return value;
+        // table_hits++;
+        // return value;
     }
 
     // ensure no overflow of arrays depending on max_depth
@@ -929,22 +929,23 @@ void search_position(Position &pos, int depth) {
     auto start = chrono::high_resolution_clock::now();
 
     // iterative deepening
-    for (int current_depth = 1; current_depth <= depth; current_depth++) {
+    //for (int current_depth = 1; current_depth <= depth; current_depth++) {
         follow_pv = 1;
         leftmost = 1;
         // find best move within a given position
-        score = negamax(pos, current_depth, -500000, 500000);
+        score = negamax(pos, depth, -500000, 500000);
         // stop clock
         auto stop = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-        assert(pv_table[0][current_depth-1] == pv_table[current_depth-1][current_depth-1]);
+        assert(pv_table[0][depth-1] == pv_table[depth-1][depth-1]);
         // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5
-        cout << "info depth " << current_depth << " score cp " << score << " nodes " << nodes << " nps " << uint64_t(1000000.0 * nodes / duration.count()) << " pv ";
+        cout << "info depth " << depth << " score cp " << score << " nodes " << nodes << " nps " << uint64_t(1000000.0 * nodes / duration.count()) << " pv ";
         for (int i = 0; i < pv_length[0]; i++) {
-            cout << get_move_string(pv_table[0][i]) << " ";
+            cout << get_move_string(pv_table[0][i]) << " " << flush;
+            assert(get_move_string(pv_table[0][i]) != "a8a8");
         }
         cout << endl;
-    }
+    //}
     cout << "bestmove " << get_move_string(pv_table[0][0]) << endl; 
 }
 
@@ -1176,9 +1177,15 @@ int main() {
         game_position.print_board();
         game_position.print_board_stats();
 
-        search_position(game_position, 5);
+        search_position(game_position, 4);
         cout << "Quiescence search nodes: " << quiesc_nodes << endl;
         cout << "Table hits:              " << table_hits << endl;
+
+        string s = "";
+        for (int i = 0; i < pv_length[0]; i++) {
+            assert(parse_move(game_position, get_move_string(pv_table[0][i])) != 0);
+            game_position.make_move(pv_table[0][i]);
+        }
 
         // search_position(game_position, 8);
         // cout << "Quiescence search nodes: " << quiesc_nodes << endl;
