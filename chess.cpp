@@ -26,7 +26,7 @@ int main() {
     Position game_position;
     clear_hash_table();
 
-    int debug = 0;
+    int debug = 1;
 
     if (debug) {
         // game_position.parse_fen("6rk/8/8/8/8/8/8/RK6 w - - 0 1");
@@ -38,13 +38,13 @@ int main() {
         game_position.print_board();
         game_position.print_board_stats();
 
-        // seconds_per_move = 10;
+        seconds_per_move = 10;
 
-        // go_start = chrono::steady_clock::now();
+        go_start = chrono::steady_clock::now();
 
-        // search_position(game_position, 10);
-        // cout << "Quiescence search nodes: " << quiesc_nodes << endl;
-        // cout << "Table hits:              " << table_hits << endl;
+        search_position(game_position, 10);
+        cout << "Quiescence search nodes: " << quiesc_nodes << endl;
+        cout << "Table hits:              " << table_hits << endl;
 
         // string s = "";
         // for (int i = 0; i < pv_length[0]; i++) {
@@ -52,7 +52,7 @@ int main() {
         //     game_position.make_move(pv_table[0][i]);
         // }
 
-        run_perft(game_position, 5);
+        //run_perft(game_position, 5);
         //run_perft_tests();
 
     }
