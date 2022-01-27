@@ -371,7 +371,6 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
         //     print_move_scores(pos, moves);
         //     cout << endl;
         // }
-
         if (pos.make_move(moves.moves[i])) {
             legal_moves++;
             nodes++;
