@@ -6,15 +6,30 @@
 
 using namespace std;
 
+#define copy_board(pos) \
+    int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy; \
+    copy(pos.board, pos.board + 128, board_copy); \
+    copy(pos.king_squares, pos.king_squares + 2, king_squares_copy); \
+    side_copy = pos.side; \
+    enpassant_copy = pos.enpassant; \
+    castle_copy = pos.castle;
+
+#define restore_board(pos) \
+    copy(board_copy, board_copy + 128, pos.board); \
+    copy(king_squares_copy, king_squares_copy + 2, pos.king_squares); \
+    pos.side = side_copy; \
+    pos.enpassant = enpassant_copy; \
+    pos.castle = castle_copy;
+
 // perft test
 uint64_t perft(Position &pos, int depth, bool divide) {
     Movelist moves;
     int n_moves;
     uint64_t nodes = 0;
 
-    n_moves = generate_legal_moves(pos, moves);
+    n_moves = generate_pseudo_moves(pos, moves);
     
-    if (depth == 1) return n_moves;
+    if (depth == 0) return 1;
 
     //generate_moves(moves);
 
@@ -26,6 +41,8 @@ uint64_t perft(Position &pos, int depth, bool divide) {
     // side_copy = pos.side;
     // enpassant_copy = pos.enpassant;
     // castle_copy = pos.castle;
+
+    //copy_board(pos);
 
     // copy board state
     Position copy = pos;
@@ -44,12 +61,14 @@ uint64_t perft(Position &pos, int depth, bool divide) {
             }
             
 
-            // // restore board state
+            // restore board state
             // copy(board_copy, board_copy + 128, pos.board);
             // copy(king_squares_copy, king_squares_copy + 2, pos.king_squares);
             // pos.side = side_copy;
             // pos.enpassant = enpassant_copy;
             // pos.castle = castle_copy;
+
+            //restore_board(pos);
 
             // restore board state
             pos = copy;

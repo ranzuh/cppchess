@@ -243,14 +243,14 @@ void Position::print_board_stats() {
 // todo differentiate between captures and all_moves
 int Position::make_move(int move) {
     // define board state copies
-    // int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
+    int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
 
     // copy board state
-    // copy(board, board + 128, board_copy);
-    // copy(king_squares, king_squares + 2, king_squares_copy);
-    // side_copy = side;
-    // enpassant_copy = enpassant;
-    // castle_copy = castle;
+    copy(board, board + 128, board_copy);
+    copy(king_squares, king_squares + 2, king_squares_copy);
+    side_copy = side;
+    enpassant_copy = enpassant;
+    castle_copy = castle;
 
     // decode move
     int from_square = decode_source(move);
@@ -277,19 +277,6 @@ int Position::make_move(int move) {
     if (is_capture) {
         material_score -= piece_values[target_piece];
     }
-
-    // unmake move if king under check
-    // if (is_square_attacked(king_squares[side], !side)) {
-    //     // restore board state
-    //     copy(board_copy, board_copy + 128, board);
-    //     copy(king_squares_copy, king_squares_copy + 2, king_squares);
-    //     side = side_copy;
-    //     enpassant = enpassant_copy;
-    //     castle = castle_copy;
-
-    //     // illegal move
-    //     return 0;
-    // }
 
     // reset enpassant square
     enpassant = no_sq;
@@ -344,6 +331,19 @@ int Position::make_move(int move) {
         // make move
         // board[to_square] = board[from_square];
         // board[from_square] = e;
+    }
+
+    // unmake move if king under check
+    if (is_square_attacked(*this, king_squares[side], !side)) {
+        // restore board state
+        copy(board_copy, board_copy + 128, board);
+        copy(king_squares_copy, king_squares_copy + 2, king_squares);
+        side = side_copy;
+        enpassant = enpassant_copy;
+        castle = castle_copy;
+
+        // illegal move
+        return 0;
     }
 
     // update castling rights
