@@ -45,4 +45,6 @@ void print_movelist(Movelist &moves);
 
 int is_square_attacked(Position &pos, int square, int side);
 
+string get_move_string(int move);
+
 #endif

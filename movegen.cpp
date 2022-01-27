@@ -599,3 +599,27 @@ void print_movelist(Movelist &moves) {
 
     cout << "Total move count: " << moves.count << endl;
 }
+
+string get_move_string(int move) {
+    string move_string = "";
+    move_string += Position::square_to_coord[decode_source(move)] + Position::square_to_coord[decode_target(move)];
+    if (decode_promotion(move)) {
+        int promoted_piece = decode_promotion(move);
+        // promoted to queen
+        if ((promoted_piece == Q || promoted_piece == q))
+            move_string += 'q';
+        
+        // promoted to rook
+        else if ((promoted_piece == R || promoted_piece == r))
+            move_string += 'r';
+        
+        // promoted to bishop
+        else if ((promoted_piece == B || promoted_piece == b))
+            move_string += 'b';
+        
+        // promoted to knight
+        else if ((promoted_piece == N || promoted_piece == n))
+            move_string += 'n';
+    }
+    return move_string;
+}
