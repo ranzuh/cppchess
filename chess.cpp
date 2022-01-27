@@ -26,7 +26,7 @@ int main() {
     Position game_position;
     clear_hash_table();
 
-    int debug = 0;
+    int debug = 1;
 
     if (debug) {
         // game_position.parse_fen("6rk/8/8/8/8/8/8/RK6 w - - 0 1");
@@ -61,7 +61,7 @@ int main() {
 
     }
     else {
-        seconds_per_move = 5;
+        seconds_per_move = 2;
         uci_loop(game_position);
     }
 

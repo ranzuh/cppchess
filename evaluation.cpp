@@ -94,7 +94,7 @@ int evaluate_position(Position &pos) {
             int square = rank * 16 + file;
             int square_in_64 = rank * 8 + file;
             //cout << square_in_64 << endl;
-            if (!(square & 0x88)) {
+            if (!(square & 0x88) && pos.board[square] != e) {
                 int piece = pos.board[square];
                 score += piece_values[piece];
                 
