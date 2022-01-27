@@ -6,8 +6,9 @@
 * Quiescence search
 * Iterative deepening
 * Transposition table
-* Evaluation using piece-square tables and MVV-LVA
+* Evaluation using material and piece-square tables
 * Principal variation table
+* Move ordering with MVV-LVA, PV-nodes and killer moves
 * 3-fold repetition handling
 * Uses UCI to communicate with a Chess GUI
 
