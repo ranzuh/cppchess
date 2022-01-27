@@ -1,6 +1,15 @@
 # C++ Chess engine
 
-* Uses [0x88](https://www.chessprogramming.org/0x88) board representation
+## Features
+* [0x88](https://www.chessprogramming.org/0x88) board representation
+* Negamax search with alpha-beta pruning
+* Quiescence search
+* Iterative deepening
+* Transposition table
+* Evaluation using piece-square tables and MVV-LVA
+* Principal variation table
+* 3-fold repetition handling
+* Uses UCI to communicate with a Chess GUI
 
 (development) compile and run with:
 ```
