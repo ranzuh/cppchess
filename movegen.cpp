@@ -24,9 +24,11 @@ void Movelist::reset() {
     count = 0;
 }
 
+uint64_t call_count = 0;
+
 // is given square attacked by given side
 int is_square_attacked(Position &pos, int square, int side) {
-
+    call_count++;
     // pawn attacks
     if (side == white) {
         // attacker square not empty and its a correct color pawn

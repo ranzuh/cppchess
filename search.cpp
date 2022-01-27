@@ -261,7 +261,7 @@ int quiescence_search(Position &pos, int alpha, int beta) {
 
     // loop over all captures
     Movelist moves;
-    generate_legal_moves(pos, moves);
+    generate_pseudo_moves(pos, moves);
 
     // sort moves
     sort_moves(pos, moves);
@@ -350,25 +350,7 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
     value = -500000;
 
     Movelist moves;
-    generate_legal_moves(pos, moves);
-
-    // if no legal moves
-    if (moves.count == 0) {
-        // king is in check - checkmate
-        if (king_attacked) {
-            //cout << "found mate at ply " << ply << endl;
-            value = -49000 + ply;
-            write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
-            return value;
-        }
-        // king is not in check - stalemate
-        else {
-            //cout << "found stalemate at ply " << ply << endl;
-            value = 0;
-            write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
-            return value;
-        }
-    }
+    generate_pseudo_moves(pos, moves);
 
     // if we are following pv line
     if (follow_pv) {
@@ -382,13 +364,15 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
     // copy board state
     Position copy = pos;
 
+    int legal_moves = 0;
+
     for (int i = 0; i < moves.count; i++) {
         // if (leftmost) {
         //     print_move_scores(pos, moves);
         //     cout << endl;
         // }
-
         if (pos.make_move(moves.moves[i])) {
+            legal_moves++;
             nodes++;
 
             ply++;
@@ -430,6 +414,24 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
 
                 hash_flag = hash_flag_exact;
             }
+        }
+    }
+
+    // if no legal moves
+    if (legal_moves == 0) {
+        // king is in check - checkmate
+        if (king_attacked) {
+            //cout << "found mate at ply " << ply << endl;
+            value = -49000 + ply;
+            write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
+            return value;
+        }
+        // king is not in check - stalemate
+        else {
+            //cout << "found stalemate at ply " << ply << endl;
+            value = 0;
+            write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
+            return value;
         }
     }
     

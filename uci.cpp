@@ -143,7 +143,7 @@ void parse_go(Position &pos, string command) {
 
     // start timing
     stopped = 0;
-    seconds_per_move = 5;
+    //seconds_per_move = 5;
     go_start = chrono::steady_clock::now();
 
     //cout << "Depth: " << depth << endl;
