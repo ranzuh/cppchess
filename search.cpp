@@ -5,6 +5,7 @@
 #include "movegen.h"
 #include "hashtable.h"
 #include "evaluation.h"
+#include <numeric>
 
 /*
     Most valuable victim & less valuable attacker
@@ -172,6 +173,7 @@ struct Compare_move_scores {
 //     return score_move(pos, move1) < score_move(pos, move2);
 // }
 
+
 void sort_moves(Position &pos, Movelist &moves) {
     Movelist move_scores;
 
@@ -221,6 +223,22 @@ void sort_moves(Position &pos, Movelist &moves) {
     //sort(moves.moves, moves.moves + moves.count, Compare_move_scores(pos));
 }
 
+void order_moves(Position &pos, Movelist &moves, Movelist &scores, int original_index) {
+    int best_index = original_index;
+	int best_score = scores.moves[best_index];
+
+    for (int i = best_index; i < moves.count; i++) {
+        if (scores.moves[i] > best_score) {
+            best_index = i;
+            best_score = scores.moves[i];
+        }
+    }
+
+    int temp = moves.moves[original_index];
+    moves.moves[original_index] = moves.moves[best_index];
+    moves.moves[best_index] = temp;
+}
+
 chrono::steady_clock::time_point go_start;
 int stopped = 0;
 int seconds_per_move = 5;
@@ -259,6 +277,18 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     // copy board state
     Position copy = pos;
 
+    // // define board state copies
+    // int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
+    // uint64_t hash_copy;
+
+    // // copy board state
+    // copy(pos.board, pos.board + 128, board_copy);
+    // copy(pos.king_squares, pos.king_squares + 2, king_squares_copy);
+    // side_copy = pos.side;
+    // enpassant_copy = pos.enpassant;
+    // castle_copy = pos.castle;
+    // hash_copy = pos.hash_key;
+
     // loop over all captures
     Movelist moves;
     generate_pseudo_moves(pos, moves);
@@ -266,8 +296,14 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     // sort moves
     sort_moves(pos, moves);
 
+    // Movelist scores;
+    // for (int i = 0; i < moves.count; i++) {
+    //     scores.add_move(score_move(pos, moves.moves[i]));
+    // }
+
     for (int i = 0; i < moves.count; i++) {
         if (decode_capture(moves.moves[i])) {
+            //order_moves(pos, moves, scores, i);
             if (pos.make_move(moves.moves[i])) {
                 nodes++;
                 quiesc_nodes++;
@@ -282,6 +318,14 @@ int quiescence_search(Position &pos, int alpha, int beta) {
                 
                 // restore board state
                 pos = copy;
+
+                // // restore board state
+                // copy(board_copy, board_copy + 128, pos.board);
+                // copy(king_squares_copy, king_squares_copy + 2, pos.king_squares);
+                // pos.side = side_copy;
+                // pos.enpassant = enpassant_copy;
+                // pos.castle = castle_copy;
+                // pos.hash_key = hash_copy;
 
                 if (stopped) return 0;
 
@@ -361,8 +405,25 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
     // sort moves
     sort_moves(pos, moves);
 
+    // Movelist scores;
+    // for (int i = 0; i < moves.count; i++) {
+    //     scores.add_move(score_move(pos, moves.moves[i]));
+    // }
+
     // copy board state
     Position copy = pos;
+
+    // define board state copies
+    // int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
+    // uint64_t hash_copy;
+
+    // // copy board state
+    // copy(pos.board, pos.board + 128, board_copy);
+    // copy(pos.king_squares, pos.king_squares + 2, king_squares_copy);
+    // side_copy = pos.side;
+    // enpassant_copy = pos.enpassant;
+    // castle_copy = pos.castle;
+    // hash_copy = pos.hash_key;
 
     int legal_moves = 0;
 
@@ -371,6 +432,7 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
         //     print_move_scores(pos, moves);
         //     cout << endl;
         // }
+        //order_moves(pos, moves, scores, i);
         if (pos.make_move(moves.moves[i])) {
             legal_moves++;
             nodes++;
@@ -383,6 +445,14 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
             
             // restore board state
             pos = copy;
+
+            // restore board state
+            // copy(board_copy, board_copy + 128, pos.board);
+            // copy(king_squares_copy, king_squares_copy + 2, pos.king_squares);
+            // pos.side = side_copy;
+            // pos.enpassant = enpassant_copy;
+            // pos.castle = castle_copy;
+            // pos.hash_key = hash_copy;
 
             if (stopped) return 0;
             

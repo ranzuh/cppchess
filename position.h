@@ -95,7 +95,6 @@ struct Position {
     void parse_fen(string fen);
     void print_board_stats();
     int make_move(int move);
-    uint64_t perft(int depth);
     void set_material();
 };
 

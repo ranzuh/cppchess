@@ -38,14 +38,16 @@ int main() {
         game_position.print_board();
         game_position.print_board_stats();
 
-        seconds_per_move = 10;
-        stopped = 0;
-        go_start = chrono::steady_clock::now();
+        // seconds_per_move = 10;
+        // stopped = 0;
+        // go_start = chrono::steady_clock::now();
 
-        search_position(game_position, 10);
-        cout << "Quiescence search nodes: " << quiesc_nodes << endl;
-        cout << "Table hits:              " << table_hits << endl;
-        cout << "Call count:              " << call_count << endl;
+        // search_position(game_position, 10);
+        // cout << "Quiescence search nodes: " << quiesc_nodes << endl;
+        // cout << "Table hits:              " << table_hits << endl;
+        // cout << "Call count:              " << call_count << endl;
+
+        cout <<  (h8 - a1) + 0x77 << endl;
 
         // string s = "";
         // for (int i = 0; i < pv_length[0]; i++) {
