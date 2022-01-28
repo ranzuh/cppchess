@@ -14,28 +14,67 @@ struct Movelist
     void reset();
 };
 
-int encode_move(
+// encode moves to 21 bit representation
+/* 
+Move encoding
+
+0000 0000 0000 0000 0111 1111   source square       7 bits  0x7f
+0000 0000 0011 1111 1000 0000   target square       7 bits  0x7f
+0000 0011 1100 0000 0000 0000   promotion piece     4 bits  0xf
+0000 0100 0000 0000 0000 0000   capture flag        1 bit   0x1
+0000 1000 0000 0000 0000 0000   double pawn flag    1 bit   0x1
+0001 0000 0000 0000 0000 0000   en passant flag     1 bit   0x1
+0010 0000 0000 0000 0000 0000   castling flag       1 bit   0x1
+
+TODO: Test if #define macros are more performant
+
+*/
+inline int encode_move(
     int source, 
     int target, 
     int promotion,
     int capture,
     int double_pawn, 
     int enpassant, 
-    int castling);
+    int castling) 
+{
+    return 
+        source | 
+        target << 7 | 
+        promotion << 14 | 
+        capture << 18 | 
+        double_pawn << 19 | 
+        enpassant << 20 | 
+        castling << 21;
+}
 
-int decode_source(int move);
+inline int decode_source(int move) {
+    return move & 0x7f;
+}
 
-int decode_target(int move);
+inline int decode_target(int move) {
+    return (move >> 7) & 0x7f; 
+}
 
-int decode_promotion(int move);
+inline int decode_promotion(int move) {
+    return (move >> 14) & 0xf;
+}
 
-int decode_capture(int move);
+inline int decode_capture(int move) {
+    return (move >> 18) & 0x1;
+}
 
-int decode_double_pawn(int move);
+inline int decode_double_pawn(int move) {
+    return (move >> 19) & 0x1;
+}
 
-int decode_enpassant(int move);
+inline int decode_enpassant(int move) {
+    return (move >> 20) & 0x1;
+}
 
-int decode_castling(int move);
+inline int decode_castling(int move) {
+    return (move >> 21) & 0x1;
+}
 
 int generate_pseudo_moves(Position &pos, Movelist &moves);
 

@@ -1,5 +1,6 @@
 #include "position.h"
 //#include "evaluation.h"
+#include <iostream>
 
 ////////////////
 // evaluation //
@@ -88,14 +89,15 @@ int mirror_square[] = {
 
 int evaluate_position(Position &pos) {
     int score = 0;
+    int square, square_in_64, piece;
     for (int rank = 0; rank < 8; rank++) {
         for (int file = 0; file < 8; file++) {
             // square as 0..127
-            int square = rank * 16 + file;
-            int square_in_64 = rank * 8 + file;
+            square = rank * 16 + file;
+            square_in_64 = rank * 8 + file;
+            piece = pos.board[square];
             //cout << square_in_64 << endl;
-            if (!(square & 0x88) && pos.board[square] != e) {
-                int piece = pos.board[square];
+            if (piece != e) {
                 score += piece_values[piece];
                 
                 switch (piece) {

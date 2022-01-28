@@ -54,14 +54,14 @@ int main() {
         // }
 
         // call_count = 0;
-        // run_perft(game_position, 4);
+        //run_perft(game_position, 4);
         // cout << "Call count:              " << call_count << endl;
         //cout << sizeof(Position) << " bytes" << endl;
         //run_perft_tests();
 
     }
     else {
-        seconds_per_move = 2;
+        seconds_per_move = 5;
         uci_loop(game_position);
     }
 
