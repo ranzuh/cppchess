@@ -138,7 +138,7 @@ void parse_go(Position &pos, string command) {
         depth = stoi(command.substr(index + 6));
     }
     else {
-        depth = 10;
+        depth = 30;
     }
 
     // start timing

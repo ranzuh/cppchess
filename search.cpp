@@ -258,6 +258,9 @@ int quiescence_search(Position &pos, int alpha, int beta) {
 
     check_time();
 
+    // init PV length
+    pv_length[ply] = ply;
+
     // get lower bound score
     int stand_pat = evaluate_position(pos);
 
@@ -308,10 +311,6 @@ int quiescence_search(Position &pos, int alpha, int beta) {
                 nodes++;
                 quiesc_nodes++;
                 ply++;
-                // if (max_ply < ply) {
-                //     max_ply = ply;
-                //     cout << max_ply << " ply reached" << endl;
-                // }
                 int value = -quiescence_search(pos, -beta, -alpha);
                 ply--;
                 pos.rep_index -= 1;
@@ -335,6 +334,16 @@ int quiescence_search(Position &pos, int alpha, int beta) {
 
                 if (value > alpha) {
                     alpha = value;
+                    // add pv move to pv table
+                    pv_table[ply][ply] = moves.moves[i];
+
+                    // loop over the next ply
+                    for (int next_ply = ply + 1; next_ply < pv_length[ply + 1]; next_ply++)
+                        // copy move from deeper ply into a current ply's line
+                        pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+                    
+                    // increment pv length for current ply
+                    pv_length[ply] = pv_length[ply + 1];
                 }
             }
         }
@@ -343,12 +352,18 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     return alpha;
 }
 
+inline int get_square_in_64(int square) {
+    return (square >> 4) * 8 + (square & 7);
+}
+
 int leftmost = 1;
 
 int table_hits = 0;
 
+int reduced_depth = 2;
+
 // negamax search with alpha-beta pruning
-int negamax(Position &pos, int depth, int alpha, int beta) {
+int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
     check_time();
 
@@ -364,11 +379,39 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
         depth += 1;
     }
 
+    bool pv_node = beta - alpha > 1;
+
     int hash_flag = hash_flag_alpha;
     int value = read_hash_entry(pos.hash_key, alpha, beta, depth);
-    if (ply && value != no_hash_entry) {
+    if (ply && value != no_hash_entry && !pv_node) {
         table_hits++;
         return value;
+    }
+
+    // null move pruning
+    if (null_move && depth >= 3 && !pv_node && !king_attacked && ply) {
+        Position copy = pos;
+        // make null move
+        pos.side = !pos.side;
+        // hash side change
+        pos.hash_key ^= side_key;
+
+        // hash enpassant if available (remove enpassant square from hash key )
+        if (pos.enpassant != no_sq) pos.hash_key ^= enpassant_keys[get_square_in_64(pos.enpassant)];
+
+        pos.enpassant = no_sq;
+        ply++;
+        int score = -negamax(pos, depth - 1 - reduced_depth, -beta, -beta + 1, false);
+        ply--;
+        // restore board state
+        pos = copy;
+
+        if (stopped) return 0;
+
+        if (score >= beta) {
+            return beta;
+        }
+
     }
 
     // ensure no overflow of arrays depending on max_depth
@@ -387,7 +430,9 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
     }
 
     if (depth == 0) {
+        ply++;
         value = quiescence_search(pos, alpha, beta);
+        ply--;
         //write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
         return value;
         //return evaluate_position(pos);
@@ -442,14 +487,14 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
             // PVS - principal variation search
             if (found_pv) {
                 // Assume pv node
-                value = -negamax(pos, depth - 1, -alpha - 1, -alpha);
+                value = -negamax(pos, depth - 1, -alpha - 1, -alpha, true);
                 // check if assumption was wrong and if it was, do a re-search
                 if ((value > alpha) && (value < beta))
-                    value = -negamax(pos, depth - 1, -beta, -alpha);
+                    value = -negamax(pos, depth - 1, -beta, -alpha, true);
             }
             // normal search
             else
-                value = -negamax(pos, depth - 1, -beta, -alpha);
+                value = -negamax(pos, depth - 1, -beta, -alpha, true);
             ply--;
 
             leftmost = 0;
@@ -556,7 +601,7 @@ void search_position(Position &pos, int depth) {
         follow_pv = 1;
         leftmost = 1;
         // find best move within a given position
-        score = negamax(pos, current_depth, -500000, 500000);
+        score = negamax(pos, current_depth, -500000, 500000, true);
 
         if (!stopped) {
             // stop clock
