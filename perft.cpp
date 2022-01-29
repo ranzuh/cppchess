@@ -26,10 +26,9 @@ uint64_t perft(Position &pos, int depth, bool divide) {
     Movelist moves;
     int n_moves;
     uint64_t nodes = 0;
+    if (depth == 0) return 1;
 
     n_moves = generate_pseudo_moves(pos, moves);
-    
-    if (depth == 0) return 1;
 
     //generate_moves(moves);
 
@@ -119,15 +118,15 @@ void run_perft_tests() {
     // test 3
     cout << endl << "Test 3: Position 3" << endl;
     pos.parse_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
-    result = perft(pos, 6, true);
-    assert(result == 11030083);
+    result = perft(pos, 5, true);
+    assert(result == 674624);
     total_nodes += result;
 
     // test 4
     cout << endl << "Test 4: Position 4" << endl;
     pos.parse_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
-    result = perft(pos, 5, true);
-    assert(result == 15833292);
+    result = perft(pos, 4, true);
+    assert(result == 422333);
     total_nodes += result;
 
     // test 5

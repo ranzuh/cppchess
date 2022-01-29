@@ -2,6 +2,7 @@
 #include <string>
 #include "position.h"
 #include "movegen.h"
+#include "hashtable.h"
 #include <chrono>
 
 using namespace std;
@@ -238,6 +239,10 @@ void Position::print_board_stats() {
     cout << "    Hash key:        " << hex << hash_key << dec << endl << endl;
 }
 
+inline int get_square_in_64(int square) {
+    return (square >> 4) * 8 + (square & 7);
+}
+
 // make a move on the board if its legal
 // returns 1 if legal, 0 if illegal
 // todo differentiate between captures and all_moves
@@ -251,6 +256,7 @@ int Position::make_move(int move) {
     side_copy = side;
     enpassant_copy = enpassant;
     castle_copy = castle;
+    uint64_t hash_copy = hash_key;
 
     // decode move
     int from_square = decode_source(move);
@@ -269,14 +275,24 @@ int Position::make_move(int move) {
     board[to_square] = board[from_square];
     board[from_square] = e;
 
+    // remove piece from previous square
+    hash_key ^= piece_keys[source_piece][get_square_in_64(from_square)];
+    // add same piece to next square if not promotion
+    if (!promoted_piece) {
+        hash_key ^= piece_keys[source_piece][get_square_in_64(to_square)];
+    }
+
     // update king square
     if (board[to_square] == K || board[to_square] == k) {
         king_squares[side] = to_square;
     }
 
-    if (is_capture) {
-        material_score -= piece_values[target_piece];
+    if (is_capture && !is_enpassant) {
+        hash_key ^= piece_keys[target_piece][get_square_in_64(to_square)];
     }
+
+    // hash enpassant if available (remove enpassant square from hash key )
+    if (enpassant != no_sq) hash_key ^= enpassant_keys[get_square_in_64(enpassant)];
 
     // reset enpassant square
     enpassant = no_sq;
@@ -284,53 +300,53 @@ int Position::make_move(int move) {
     // handle promotion
     if (promoted_piece != e) {
         board[to_square] = promoted_piece;
-        //board[from_square] = e;
-        material_score += piece_values[promoted_piece];
-        material_score -= piece_values[source_piece];
+
+        // add promoted piece to square
+        hash_key ^= piece_keys[promoted_piece][get_square_in_64(to_square)];
     }
     else if (is_enpassant) {
-        //board[to_square] = board[from_square];
-        //board[from_square] = e;
-        side == white ? material_score -= piece_values[board[to_square + 16]] : material_score -= piece_values[board[to_square - 16]];
         side == white ? board[to_square + 16] = e : board[to_square - 16] = e;
+        // hash enpassant
+        side == white ? hash_key ^= piece_keys[p][get_square_in_64(to_square + 16)] : hash_key ^= piece_keys[P][get_square_in_64(to_square - 16)];
     }
     else if (is_double_pawn) {
-        // board[to_square] = board[from_square];
-        // board[from_square] = e;
         side == white ? enpassant = to_square + 16 : enpassant = to_square - 16;
+        // hashing
+        side == white ? hash_key ^= enpassant_keys[get_square_in_64(to_square + 16)] : hash_key ^= enpassant_keys[get_square_in_64(to_square - 16)];
     }
     else if (is_castling) {
-        // board[to_square] = board[from_square];
-        // board[from_square] = e;
         switch (to_square) {
             // white queen side castling
             case c1:
                 board[d1] = board[a1];
                 board[a1] = e;
+                hash_key ^= piece_keys[R][get_square_in_64(a1)];
+                hash_key ^= piece_keys[R][get_square_in_64(d1)];
                 break;
             // white king side castling
             case g1:
                 board[f1] = board[h1];
                 board[h1] = e;
+                hash_key ^= piece_keys[R][get_square_in_64(h1)];
+                hash_key ^= piece_keys[R][get_square_in_64(f1)];
                 break;
             // black queen side castling
             case c8:
                 board[d8] = board[a8];
                 board[a8] = e;
+                hash_key ^= piece_keys[r][get_square_in_64(a8)];
+                hash_key ^= piece_keys[r][get_square_in_64(d8)];
                 break;
             // black king    side castling
             case g8:
                 board[f8] = board[h8];
                 board[h8] = e;
+                hash_key ^= piece_keys[r][get_square_in_64(h8)];
+                hash_key ^= piece_keys[r][get_square_in_64(f8)];
                 break;
             default:
                 break;
         }
-    }
-    else {
-        // make move
-        // board[to_square] = board[from_square];
-        // board[from_square] = e;
     }
 
     // unmake move if king under check
@@ -341,10 +357,14 @@ int Position::make_move(int move) {
         side = side_copy;
         enpassant = enpassant_copy;
         castle = castle_copy;
+        hash_key = hash_copy;
 
         // illegal move
         return 0;
     }
+
+    // remove old castle from hash
+    hash_key ^= castle_keys[castle];
 
     // update castling rights
     // king or rook has moved
@@ -352,32 +372,16 @@ int Position::make_move(int move) {
     // rook was captured
     castle &= castling_board[to_square];
 
+    // add new castle to hash
+    hash_key ^= castle_keys[castle]; 
+
     // change side
     side = !side;
-
-    //
-    // ====== debug hash key incremental update ======= //
-    //
-    
-    // build hash key for the updated position (after move is made) from scratch Nodes per second: 18267536
-    hash_key = generate_hash_key(*this);
+    hash_key ^= side_key;
 
     // increment repetition index & store hash key
     rep_index += 1;
     rep_stack[rep_index] = hash_key;
-    
-    // in case if hash key built from scratch doesn't match
-    // the one that was incrementally updated we interrupt execution
-    // if (hash_key != hash_from_scratch)
-    // {
-    //     cout << "Make move" << endl;
-    //     cout << "move: " << get_move_string2(move) << endl;
-    //     print_board();
-    //     print_board_stats();
-    //     cout << "hash key should be: " << hex << hash_from_scratch << dec << endl;
-    //     string mystring;
-    //     cin >> mystring;
-    // }
 
     // legal move
     return 1;
