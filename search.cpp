@@ -355,7 +355,8 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
     // init PV length
     pv_length[ply] = ply;
 
-    
+    // Init PVS flag
+    int found_pv = 0;
 
     // are we in check? if so, we want to search deeper
     int king_attacked = is_square_attacked(pos, pos.king_squares[pos.side], !pos.side);
@@ -438,7 +439,17 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
             nodes++;
 
             ply++;
-            value = -negamax(pos, depth - 1, -beta, -alpha);
+            // PVS - principal variation search
+            if (found_pv) {
+                // Assume pv node
+                value = -negamax(pos, depth - 1, -alpha - 1, -alpha);
+                // check if assumption was wrong and if it was, do a re-search
+                if ((value > alpha) && (value < beta))
+                    value = -negamax(pos, depth - 1, -beta, -alpha);
+            }
+            // normal search
+            else
+                value = -negamax(pos, depth - 1, -beta, -alpha);
             ply--;
 
             leftmost = 0;
@@ -484,6 +495,9 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
                 pv_length[ply] = pv_length[ply + 1];
 
                 hash_flag = hash_flag_exact;
+
+                // set PVS flag
+                found_pv = 1;
             }
         }
     }
