@@ -86,6 +86,10 @@ int mirror_square[] = {
      0,  1,  2,  3,  4,  5,  6,  7,
 };
 
+inline int get_square_in_64(int square) {
+    return (square >> 4) * 8 + (square & 7);
+}
+
 
 int evaluate_position(Position &pos) {
     int score = 0;
@@ -94,10 +98,11 @@ int evaluate_position(Position &pos) {
         for (int file = 0; file < 8; file++) {
             // square as 0..127
             square = rank * 16 + file;
-            square_in_64 = rank * 8 + file;
+            //square_in_64 = rank * 8 + file;
             piece = pos.board[square];
             //cout << square_in_64 << endl;
             if (piece != e) {
+                square_in_64 = get_square_in_64(square);
                 score += piece_values[piece];
                 
                 switch (piece) {

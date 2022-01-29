@@ -439,8 +439,9 @@ int negamax(Position &pos, int depth, int alpha, int beta) {
 
             ply++;
             value = -negamax(pos, depth - 1, -beta, -alpha);
-            leftmost = 0;
             ply--;
+
+            leftmost = 0;
             pos.rep_index -= 1;
             
             // restore board state
