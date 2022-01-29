@@ -6,6 +6,8 @@
 #include "hashtable.h"
 #include "evaluation.h"
 #include <numeric>
+#include "search.h"
+
 
 /*
     Most valuable victim & less valuable attacker
@@ -79,9 +81,9 @@ uint64_t nodes = 0;
 
 uint64_t quiesc_nodes = 0;
 
-int ply = 0;
-
 int max_ply = 0;
+
+int ply = 0;
 
 // enable pv move scoring
 void enable_pv_scoring(Movelist &moves) {
@@ -437,7 +439,7 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
         return value;
         //return evaluate_position(pos);
     }
-    value = -500000;
+    value = -infinity;
 
     Movelist moves;
     generate_pseudo_moves(pos, moves);
@@ -552,15 +554,15 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
         // king is in check - checkmate
         if (king_attacked) {
             //cout << "found mate at ply " << ply << endl;
-            value = -49000 + ply;
-            write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
+            value = -mate_value + ply;
+            //write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
             return value;
         }
         // king is not in check - stalemate
         else {
             //cout << "found stalemate at ply " << ply << endl;
             value = 0;
-            write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
+            //write_hash_entry(pos.hash_key, value, depth, hash_flag_exact);
             return value;
         }
     }
@@ -601,7 +603,7 @@ void search_position(Position &pos, int depth) {
         follow_pv = 1;
         leftmost = 1;
         // find best move within a given position
-        score = negamax(pos, current_depth, -500000, 500000, true);
+        score = negamax(pos, current_depth, -infinity, infinity, true);
 
         if (!stopped) {
             // stop clock

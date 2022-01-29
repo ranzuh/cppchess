@@ -1,6 +1,7 @@
 #include <iostream>
 #include "position.h"
 #include "hashtable.h"
+#include "search.h"
 
 using namespace std;
 
@@ -148,13 +149,18 @@ int read_hash_entry(uint64_t hash_key, int alpha, int beta, int depth) {
 
     if (hash_entry->key == hash_key) {
         if (hash_entry->depth >= depth) {
+            int score = hash_entry->score;
+            
+            if (score < -mate_score) score += ply;
+            if (score > mate_score) score -= ply;
+            
             if (hash_entry->flag == hash_flag_exact)
-                return hash_entry->score;
+                return score;
             if (hash_entry->flag == hash_flag_alpha)
-                if (hash_entry->score <= alpha)
+                if (score <= alpha)
                     return alpha;
             if (hash_entry->flag == hash_flag_beta)
-                if (hash_entry->score >= beta)
+                if (score >= beta)
                     return beta;
         }
     }
@@ -164,6 +170,9 @@ int read_hash_entry(uint64_t hash_key, int alpha, int beta, int depth) {
 
 void write_hash_entry(uint64_t hash_key, int score, int depth, int hash_flag) {
     tt *hash_entry = &hash_table[hash_key % hash_table_size];
+
+    if (score < -mate_score) score -= ply;
+    if (score > mate_score) score += ply;
 
     hash_entry->key = hash_key;
     hash_entry->score = score;
