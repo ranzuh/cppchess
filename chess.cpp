@@ -84,9 +84,18 @@ int main() {
         // game_position.print_board_stats();
         // parse_position(game_position, "position fen 8/6k1/5p2/6p1/2P4p/P2Q3P/2P2PP1/4q1K1 w - - 3 41");
         // parse_position(game_position, "position fen 8/6k1/5p2/6p1/2P4p/P2Q3P/2P2PP1/4q1K1 w - - 3 41 moves d3f1 e1c3");
-        game_position.parse_fen(tricky_position);
+        game_position.parse_fen(start_position);
         game_position.print_board();
         game_position.print_board_stats();
+
+        seconds_per_move = 5;
+        stopped = 0;
+        go_start = chrono::steady_clock::now();
+
+        search_position(game_position, 10);
+        cout << "Quiescence search nodes: " << quiesc_nodes << endl;
+        cout << "Table hits:              " << table_hits << endl;
+        cout << "Call count:              " << call_count << endl;
 
         seconds_per_move = 10;
         stopped = 0;

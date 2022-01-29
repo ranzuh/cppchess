@@ -328,10 +328,6 @@ int quiescence_search(Position &pos, int alpha, int beta) {
 
                 if (stopped) return 0;
 
-                if (value >= beta) {
-                    return beta;
-                }
-
                 if (value > alpha) {
                     alpha = value;
                     // add pv move to pv table
@@ -344,6 +340,10 @@ int quiescence_search(Position &pos, int alpha, int beta) {
                     
                     // increment pv length for current ply
                     pv_length[ply] = pv_length[ply + 1];
+
+                    if (value >= beta) {
+                        return beta;
+                    }
                 }
             }
         }
@@ -513,19 +513,6 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
             if (stopped) return 0;
             
-            // fail hard beta cutoff
-            if (value >= beta) {
-                // for quiet moves
-                if (decode_capture(moves.moves[i]) == 0) {
-                    // store killer moves
-                    killer_moves[1][ply] = killer_moves[0][ply];
-                    killer_moves[0][ply] = moves.moves[i];
-                }
-                write_hash_entry(pos.hash_key, beta, depth, hash_flag_beta);
-                
-                return beta;
-            }
-            
             if (value > alpha) {
                 alpha = value;
                 // add pv move to pv table
@@ -543,6 +530,19 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
                 // set PVS flag
                 found_pv = 1;
+
+                // fail hard beta cutoff
+                if (value >= beta) {
+                    // for quiet moves
+                    if (decode_capture(moves.moves[i]) == 0) {
+                        // store killer moves
+                        killer_moves[1][ply] = killer_moves[0][ply];
+                        killer_moves[0][ply] = moves.moves[i];
+                    }
+                    write_hash_entry(pos.hash_key, beta, depth, hash_flag_beta);
+                    
+                    return beta;
+                }
             }
         }
     }
