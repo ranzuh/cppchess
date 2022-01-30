@@ -571,6 +571,8 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
     return alpha;
 }
 
+int aspiration_window = 50;
+
 // search position for the best move
 void search_position(Position &pos, int depth) {
     // clear hash table, good idea or not?
@@ -592,8 +594,13 @@ void search_position(Position &pos, int depth) {
     memset(pv_table, 0, sizeof(pv_table));
     memset(pv_length, 0, sizeof(pv_length));
 
+    assert(ply == 0);
+
     // start timing
     auto start = chrono::high_resolution_clock::now();
+
+    int alpha = -infinity;
+    int beta = infinity;
 
     // iterative deepening
     for (int current_depth = 1; current_depth <= depth; current_depth++) {
@@ -603,15 +610,32 @@ void search_position(Position &pos, int depth) {
         follow_pv = 1;
         leftmost = 1;
         // find best move within a given position
-        score = negamax(pos, current_depth, -infinity, infinity, true);
+        score = negamax(pos, current_depth, alpha, beta, true);
+
+        // aspiration windows (small pruning boost)
+        // re-search if needed
+        if ((score <= alpha) || (score >= beta)) {
+            alpha = -infinity;
+            beta = infinity;
+            current_depth--;
+            continue;
+        }
+
+        alpha = score - aspiration_window;
+        beta = score + aspiration_window;
 
         if (!stopped) {
             // stop clock
             auto stop = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 
-            // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5
-            cout << "info depth " << current_depth << " score cp " << score << " nodes " << nodes << " nps " << uint64_t(1000000.0 * nodes / duration.count()) << " pv ";
+            if (score > -mate_value && score < -mate_score)
+                cout << "info depth " << current_depth << " score mate " << -(score + mate_value) / 2 - 1 << " nodes " << nodes << " nps " << uint64_t(1000000.0 * nodes / duration.count()) << " pv ";
+            else if (score > mate_score && score < mate_value)
+                cout << "info depth " << current_depth << " score mate " << (mate_value - score) / 2 + 1 << " nodes " << nodes << " nps " << uint64_t(1000000.0 * nodes / duration.count()) << " pv ";
+            else // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5
+                cout << "info depth " << current_depth << " score cp " << score << " nodes " << nodes << " nps " << uint64_t(1000000.0 * nodes / duration.count()) << " pv ";
+            
             for (int i = 0; i < pv_length[0]; i++) {
                 cout << get_move_string(pv_table[0][i]) << " " << flush;
                 assert(get_move_string(pv_table[0][i]) != "a8a8");

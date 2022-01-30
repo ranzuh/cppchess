@@ -4,6 +4,7 @@
 #include "position.h"
 #include "movegen.h"
 #include "uci.h"
+#include "hashtable.h"
 
 ////////////
 //  UCI   //
@@ -85,8 +86,8 @@ void parse_position(Position &pos, string command) {
 
     // parse moves
     if (command.find("moves") != string::npos) {
-        pos.rep_index = 0;
-        memset(pos.rep_stack, 0, sizeof(pos.rep_stack));
+        // pos.rep_index = 0;
+        // memset(pos.rep_stack, 0, sizeof(pos.rep_stack));
 
         string moves_substring = command.substr(command.find("moves") + 6);
 
@@ -158,9 +159,11 @@ void parse_go(Position &pos, string command) {
     GUI -> ucinewgame
 */
 // main uci loop
-void uci_loop(Position &pos) {
+void uci_loop() {
     // setbuf(stdin, NULL);
     // setbuf(stdout, NULL);
+    Position pos;
+    clear_hash_table();
 
     cout << "id name cppchess" << endl;
     cout << "id author Eetu Rantala" << endl;
@@ -194,7 +197,10 @@ void uci_loop(Position &pos) {
         
         // parse UCI "ucinewgame" command
         else if (input.find("ucinewgame") != string::npos) {
+            Position new_pos;
+            pos =  new_pos;
             parse_position(pos, "position startpos");
+            clear_hash_table();
             pos.print_board();
             pos.print_board_stats();
         }
