@@ -86,8 +86,8 @@ void parse_position(Position &pos, string command) {
 
     // parse moves
     if (command.find("moves") != string::npos) {
-        // pos.rep_index = 0;
-        // memset(pos.rep_stack, 0, sizeof(pos.rep_stack));
+        pos.rep_index = 0;
+        memset(pos.rep_stack, 0, sizeof(pos.rep_stack));
 
         string moves_substring = command.substr(command.find("moves") + 6);
 

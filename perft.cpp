@@ -24,11 +24,12 @@ using namespace std;
 // perft test
 uint64_t perft(Position &pos, int depth, bool divide) {
     Movelist moves;
-    int n_moves;
+    //int n_moves;
     uint64_t nodes = 0;
     if (depth == 0) return 1;
 
-    n_moves = generate_pseudo_moves(pos, moves);
+    //n_moves = 
+    generate_pseudo_moves(pos, moves);
 
     //generate_moves(moves);
 
