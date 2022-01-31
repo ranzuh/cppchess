@@ -24,11 +24,11 @@ void Movelist::reset() {
     count = 0;
 }
 
-uint64_t call_count = 0;
+//uint64_t call_count = 0;
 
 // is given square attacked by given side
 int is_square_attacked(Position &pos, int square, int side) {
-    call_count++;
+    //call_count++;
     // pawn attacks
     if (side == white) {
         // attacker square not empty and its a correct color pawn
@@ -51,30 +51,30 @@ int is_square_attacked(Position &pos, int square, int side) {
     for (int offset : knight_offsets) {
         // square of piece
         int target_square = square + offset;
-        // piece in the square
-        int target_piece = pos.board[target_square];
 
-        // is square on the board and is the piece correct one
-        if (!(target_square & 0x88)) {
-            if (side == white ? target_piece == N : target_piece == n) {
-                return 1;
-            }
+        // is square on the board
+        if (target_square & 0x88) continue;
+
+        // is the piece correct one
+        if (side == white ? pos.board[target_square] == N : pos.board[target_square] == n) {
+            return 1;
         }
+
     }
     
     // king attacks
     for (int offset : king_offsets) {
         // square of piece
         int target_square = square + offset;
-        // piece in the square
-        int target_piece = pos.board[target_square];
 
-        // is square on the board and is the piece correct one
-        if (!(target_square & 0x88)) {
-            if (side == white ? target_piece == K : target_piece == k) {
-                return 1;
-            }
+        // is square on the board
+        if (target_square & 0x88) continue;
+
+        // is the piece correct one
+        if (side == white ? pos.board[target_square] == K : pos.board[target_square] == k) {
+            return 1;
         }
+
     }
 
     // bishop and queen attacks
@@ -130,6 +130,9 @@ int is_square_attacked(Position &pos, int square, int side) {
     return 0;
 }
 
+int white_pawn_offsets[2] = { -17, -15 };
+int black_pawn_offsets[2] = { 17, 15 };
+
 // generate pawn moves for given side from square
 void generate_pawn_moves(Position &pos, int square, Movelist &moves) {
     if (pos.side == white) {
@@ -160,33 +163,30 @@ void generate_pawn_moves(Position &pos, int square, Movelist &moves) {
             }
 
             // pawn captures
-            for (int offset : bishop_offsets) {
-                // white pawn offsets
-                if (offset < 0) {
-                    // init target square
-                    int to_square = square + offset;
+            for (int offset : white_pawn_offsets) {
+                // init target square
+                int to_square = square + offset;
 
-                    // is on board and to_square 
-                    if (!(to_square & 0x88)) {
-                        // has enemy piece
-                        if (pos.board[to_square] >= p && pos.board[to_square] <= k) {
-                            // promotion capture
-                            // is pawn on 7th rank 
-                            if (square >= a7 && square <= h7) {
-                                moves.add_move(encode_move(square, to_square, N, 1, 0, 0, 0));
-                                moves.add_move(encode_move(square, to_square, B, 1, 0, 0, 0));
-                                moves.add_move(encode_move(square, to_square, R, 1, 0, 0, 0));
-                                moves.add_move(encode_move(square, to_square, Q, 1, 0, 0, 0));
-                            }
-                            // normal capture
-                            else {
-                                moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
-                            }
+                // is on board and to_square 
+                if (!(to_square & 0x88)) {
+                    // has enemy piece
+                    if (pos.board[to_square] >= p && pos.board[to_square] <= k) {
+                        // promotion capture
+                        // is pawn on 7th rank 
+                        if (square >= a7 && square <= h7) {
+                            moves.add_move(encode_move(square, to_square, N, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, B, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, R, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, Q, 1, 0, 0, 0));
                         }
-                        // en passant
-                        if (to_square == pos.enpassant) {
-                            moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
+                        // normal capture
+                        else {
+                            moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
                         }
+                    }
+                    // en passant
+                    if (to_square == pos.enpassant) {
+                        moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
                     }
                 }
             }
@@ -221,33 +221,30 @@ void generate_pawn_moves(Position &pos, int square, Movelist &moves) {
             }
 
             // pawn captures
-            for (int offset : bishop_offsets) {
-                // white pawn offsets
-                if (offset > 0) {
-                    // init target square
-                    int to_square = square + offset;
+            for (int offset : black_pawn_offsets) {
+                // init target square
+                int to_square = square + offset;
 
-                    // is on board and to_square
-                    if (!(to_square & 0x88)) {
-                        // has enemy piece
-                        if (pos.board[to_square] >= P && pos.board[to_square] <= K) {
-                            // promotion capture
-                            // is pawn on 2nd rank 
-                            if (square >= a2 && square <= h2) {
-                                moves.add_move(encode_move(square, to_square, n, 1, 0, 0, 0));
-                                moves.add_move(encode_move(square, to_square, b, 1, 0, 0, 0));
-                                moves.add_move(encode_move(square, to_square, r, 1, 0, 0, 0));
-                                moves.add_move(encode_move(square, to_square, q, 1, 0, 0, 0));
-                            }
-                            // normal capture
-                            else {
-                                moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
-                            }
+                // is on board and to_square
+                if (!(to_square & 0x88)) {
+                    // has enemy piece
+                    if (pos.board[to_square] >= P && pos.board[to_square] <= K) {
+                        // promotion capture
+                        // is pawn on 2nd rank 
+                        if (square >= a2 && square <= h2) {
+                            moves.add_move(encode_move(square, to_square, n, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, b, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, r, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, q, 1, 0, 0, 0));
                         }
-                        // en passant
-                        if (to_square == pos.enpassant) {
-                            moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
+                        // normal capture
+                        else {
+                            moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
                         }
+                    }
+                    // en passant
+                    if (to_square == pos.enpassant) {
+                        moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
                     }
                 }
             }
@@ -453,13 +450,14 @@ int generate_pseudo_moves(Position &pos, Movelist &moves) {
     // empty out movelist
     moves.reset();
 
-    int piece;
+    //int square;
     // loop over all squares of the board
-    for (int square = 0; square < 128; square++) {
-        // is square on board
-        if (!(square & 0x88)) {
-            piece = pos.board[square];
-            switch (piece)
+    for (int rank = 0; rank < 8; rank++) {
+        for (int file = 0; file < 8; file++) {
+            // square as 0..127
+            int square = rank * 16 + file;
+
+            switch (pos.board[square])
             {
             case P:
             case p:

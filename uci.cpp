@@ -200,7 +200,7 @@ void uci_loop() {
             Position new_pos;
             pos =  new_pos;
             parse_position(pos, "position startpos");
-            clear_hash_table();
+            //clear_hash_table();
             pos.print_board();
             pos.print_board_stats();
         }
