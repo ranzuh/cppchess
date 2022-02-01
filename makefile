@@ -13,7 +13,7 @@ all:
 	g++ -std=c++11 -Wall chess.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess
 
 release:
-	g++ -std=c++11 -Ofast -flto chess.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess
+	g++ -std=c++11 -O3 -flto chess.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess
 
 
 # cppchess: chess.o position.o movegen.o

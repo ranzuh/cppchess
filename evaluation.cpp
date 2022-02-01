@@ -235,7 +235,7 @@ int evaluate_position(Position &pos) {
 		pawn_rank[black][i] = 7;
 	}
 
-    for (rank = 0; rank < 8; rank++) {
+    for (rank = 1; rank < 7; rank++) {
         for (file = 0; file < 8; file++) {
             square = rank * 16 + file;
             piece = pos.board[square];

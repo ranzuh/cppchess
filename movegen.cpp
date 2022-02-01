@@ -7,7 +7,8 @@
 using namespace std;
 
 // piece move offsets
-
+int white_pawn_offsets[2] = { -17, -15 };
+int black_pawn_offsets[2] = { 17, 15 };
 int knight_offsets[] = { -33, -31, -18, -14,  14, 18, 31, 33 };
 int bishop_offsets[] = { -17, -15, 15, 17 };
 int rook_offsets[] = { -16, -1, 1, 16 };
@@ -129,9 +130,6 @@ int is_square_attacked(Position &pos, int square, int side) {
 
     return 0;
 }
-
-int white_pawn_offsets[2] = { -17, -15 };
-int black_pawn_offsets[2] = { 17, 15 };
 
 void generate_tactical_pawn_moves(Position &pos, int square, Movelist &moves) {
     if (pos.side == white) {

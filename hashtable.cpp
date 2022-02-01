@@ -21,6 +21,19 @@ uint64_t castle_keys[16];
 // random side key
 uint64_t side_key;
 
+struct tt {
+    uint64_t key;   // hash key
+    int depth;      // search depth
+    int flag;       // type of node (pv, alpha, or beta)
+    int score;      // score (exact, alpha, or beta)
+    //int best_move;
+};
+
+// init hashtable size to 8 MB
+const int hash_table_size = 8 * 1024 * 1024 / sizeof(tt);
+
+tt hash_table[hash_table_size];
+
 // pseudo random number state
 
 unsigned int state = 1804289383;
@@ -121,19 +134,6 @@ uint64_t generate_hash_key(Position &pos) {
     // return final key
     return final_key;
 }
-
-struct tt {
-    uint64_t key;   // hash key
-    int depth;      // search depth
-    int flag;       // type of node (pv, alpha, or beta)
-    int score;      // score (exact, alpha, or beta)
-    //int best_move;
-};
-
-// init hashtable size to 8 MB
-const int hash_table_size = 8 * 1024 * 1024 / sizeof(tt);
-
-tt hash_table[hash_table_size];
 
 void clear_hash_table() {
     for (tt &entry : hash_table) {
