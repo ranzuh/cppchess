@@ -294,9 +294,9 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     // castle_copy = pos.castle;
     // hash_copy = pos.hash_key;
 
-    // loop over all captures
+    // generate all captures and Q promotions
     Movelist moves;
-    generate_pseudo_moves(pos, moves);
+    generate_pseudo_tactical(pos, moves);
 
     // sort moves
     sort_moves(pos, moves);
@@ -306,49 +306,49 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     //     scores.add_move(score_move(pos, moves.moves[i]));
     // }
 
+    // loop over all captures and Q promotions
     for (int i = 0; i < moves.count; i++) {
-        if (decode_capture(moves.moves[i]) || decode_promotion(moves.moves[i])) {
-            //order_moves(pos, moves, scores, i);
-            if (pos.make_move(moves.moves[i])) {
-                nodes++;
-                quiesc_nodes++;
-                ply++;
-                int value = -quiescence_search(pos, -beta, -alpha);
-                ply--;
-                pos.rep_index -= 1;
+        //order_moves(pos, moves, scores, i);
+        if (pos.make_move(moves.moves[i])) {
+            nodes++;
+            quiesc_nodes++;
+            ply++;
+            int value = -quiescence_search(pos, -beta, -alpha);
+            ply--;
+            pos.rep_index -= 1;
+            
+            // restore board state
+            pos = copy;
+
+            // // restore board state
+            // copy(board_copy, board_copy + 128, pos.board);
+            // copy(king_squares_copy, king_squares_copy + 2, pos.king_squares);
+            // pos.side = side_copy;
+            // pos.enpassant = enpassant_copy;
+            // pos.castle = castle_copy;
+            // pos.hash_key = hash_copy;
+
+            if (stopped) return 0;
+
+            if (value > alpha) {
+                alpha = value;
+                // add pv move to pv table
+                pv_table[ply][ply] = moves.moves[i];
+
+                // loop over the next ply
+                for (int next_ply = ply + 1; next_ply < pv_length[ply + 1]; next_ply++)
+                    // copy move from deeper ply into a current ply's line
+                    pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
                 
-                // restore board state
-                pos = copy;
+                // increment pv length for current ply
+                pv_length[ply] = pv_length[ply + 1];
 
-                // // restore board state
-                // copy(board_copy, board_copy + 128, pos.board);
-                // copy(king_squares_copy, king_squares_copy + 2, pos.king_squares);
-                // pos.side = side_copy;
-                // pos.enpassant = enpassant_copy;
-                // pos.castle = castle_copy;
-                // pos.hash_key = hash_copy;
-
-                if (stopped) return 0;
-
-                if (value > alpha) {
-                    alpha = value;
-                    // add pv move to pv table
-                    pv_table[ply][ply] = moves.moves[i];
-
-                    // loop over the next ply
-                    for (int next_ply = ply + 1; next_ply < pv_length[ply + 1]; next_ply++)
-                        // copy move from deeper ply into a current ply's line
-                        pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
-                    
-                    // increment pv length for current ply
-                    pv_length[ply] = pv_length[ply + 1];
-
-                    if (value >= beta) {
-                        return beta;
-                    }
+                if (value >= beta) {
+                    return beta;
                 }
             }
         }
+
     }
 
     return alpha;

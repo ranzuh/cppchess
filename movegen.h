@@ -78,6 +78,8 @@ inline int decode_castling(int move) {
 
 int generate_pseudo_moves(Position &pos, Movelist &moves);
 
+int generate_pseudo_tactical(Position &pos, Movelist &moves);
+
 int generate_legal_moves(Position &pos, Movelist &moves);
 
 void print_movelist(Movelist &moves);

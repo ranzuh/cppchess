@@ -133,6 +133,94 @@ int is_square_attacked(Position &pos, int square, int side) {
 int white_pawn_offsets[2] = { -17, -15 };
 int black_pawn_offsets[2] = { 17, 15 };
 
+void generate_tactical_pawn_moves(Position &pos, int square, Movelist &moves) {
+    if (pos.side == white) {
+        // white pawn
+        if (pos.board[square] == P) {
+            // non capture Q promotion
+            int to_square = square - 16;
+            // check if target square is on board and is empty
+            if (!(to_square & 0x88) && pos.board[to_square] == e) {
+                // queen promotion
+                // is pawn on 7th rank
+                if (square >= a7 && square <= h7)
+                    moves.add_move(encode_move(square, to_square, Q, 0, 0, 0, 0));
+            }
+
+
+            // pawn captures
+            for (int offset : white_pawn_offsets) {
+                // init target square
+                int to_square = square + offset;
+
+                // is on board and to_square 
+                if (!(to_square & 0x88)) {
+                    // has enemy piece
+                    if (pos.board[to_square] >= p && pos.board[to_square] <= k) {
+                        // promotion capture
+                        // is pawn on 7th rank 
+                        if (square >= a7 && square <= h7) {
+                            moves.add_move(encode_move(square, to_square, Q, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, N, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, B, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, R, 1, 0, 0, 0));
+                        }
+                        // normal capture
+                        else {
+                            moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
+                        }
+                    }
+                    // en passant
+                    if (to_square == pos.enpassant) {
+                        moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
+                    }
+                }
+            }
+        }
+    }
+    else {
+        if (pos.board[square] == p) {
+            int to_square = square + 16;
+            // check if target square is on board and is empty
+            if (!(to_square & 0x88) && pos.board[to_square] == e) {
+                // queen promotion
+                // is pawn on 2nd rank
+                if (square >= a2 && square <= h2)
+                    moves.add_move(encode_move(square, to_square, q, 0, 0, 0, 0));
+            }
+
+            // pawn captures
+            for (int offset : black_pawn_offsets) {
+                // init target square
+                int to_square = square + offset;
+
+                // is on board and to_square
+                if (!(to_square & 0x88)) {
+                    // has enemy piece
+                    if (pos.board[to_square] >= P && pos.board[to_square] <= K) {
+                        // promotion capture
+                        // is pawn on 2nd rank 
+                        if (square >= a2 && square <= h2) {
+                            moves.add_move(encode_move(square, to_square, q, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, n, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, b, 1, 0, 0, 0));
+                            moves.add_move(encode_move(square, to_square, r, 1, 0, 0, 0));
+                        }
+                        // normal capture
+                        else {
+                            moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
+                        }
+                    }
+                    // en passant
+                    if (to_square == pos.enpassant) {
+                        moves.add_move(encode_move(square, to_square, 0, 1, 0, 1, 0));
+                    }
+                }
+            }
+        }
+    }
+}
+
 // generate pawn moves for given side from square
 void generate_pawn_moves(Position &pos, int square, Movelist &moves) {
     if (pos.side == white) {
@@ -145,10 +233,11 @@ void generate_pawn_moves(Position &pos, int square, Movelist &moves) {
                 // pawn promotions
                 // is pawn on 7th rank
                 if (square >= a7 && square <= h7) {
+                    moves.add_move(encode_move(square, to_square, Q, 0, 0, 0, 0));
                     moves.add_move(encode_move(square, to_square, N, 0, 0, 0, 0));
                     moves.add_move(encode_move(square, to_square, B, 0, 0, 0, 0));
                     moves.add_move(encode_move(square, to_square, R, 0, 0, 0, 0));
-                    moves.add_move(encode_move(square, to_square, Q, 0, 0, 0, 0));
+                    
                 }
                 else {
                     // one square ahead pawn move
@@ -174,10 +263,11 @@ void generate_pawn_moves(Position &pos, int square, Movelist &moves) {
                         // promotion capture
                         // is pawn on 7th rank 
                         if (square >= a7 && square <= h7) {
+                            moves.add_move(encode_move(square, to_square, Q, 1, 0, 0, 0));
                             moves.add_move(encode_move(square, to_square, N, 1, 0, 0, 0));
                             moves.add_move(encode_move(square, to_square, B, 1, 0, 0, 0));
                             moves.add_move(encode_move(square, to_square, R, 1, 0, 0, 0));
-                            moves.add_move(encode_move(square, to_square, Q, 1, 0, 0, 0));
+                            
                         }
                         // normal capture
                         else {
@@ -201,10 +291,11 @@ void generate_pawn_moves(Position &pos, int square, Movelist &moves) {
                 // pawn promotions
                 // is pawn on 2nd rank
                 if (square >= a2 && square <= h2) {
+                    moves.add_move(encode_move(square, to_square, q, 0, 0, 0, 0));
                     moves.add_move(encode_move(square, to_square, n, 0, 0, 0, 0));
                     moves.add_move(encode_move(square, to_square, b, 0, 0, 0, 0));
                     moves.add_move(encode_move(square, to_square, r, 0, 0, 0, 0));
-                    moves.add_move(encode_move(square, to_square, q, 0, 0, 0, 0));
+
                 }
                 else {
                     // one square ahead pawn move
@@ -232,10 +323,10 @@ void generate_pawn_moves(Position &pos, int square, Movelist &moves) {
                         // promotion capture
                         // is pawn on 2nd rank 
                         if (square >= a2 && square <= h2) {
+                            moves.add_move(encode_move(square, to_square, q, 1, 0, 0, 0));
                             moves.add_move(encode_move(square, to_square, n, 1, 0, 0, 0));
                             moves.add_move(encode_move(square, to_square, b, 1, 0, 0, 0));
                             moves.add_move(encode_move(square, to_square, r, 1, 0, 0, 0));
-                            moves.add_move(encode_move(square, to_square, q, 1, 0, 0, 0));
                         }
                         // normal capture
                         else {
@@ -309,7 +400,7 @@ void generate_castling_moves(Position &pos, int square, Movelist &moves) {
 }
 
 // generate knight moves
-void generate_knight_moves(Position &pos, int square, Movelist &moves) {
+void generate_knight_moves(Position &pos, int square, Movelist &moves, bool only_captures) {
     if (pos.side == white ? pos.board[square] == N : pos.board[square] == n) {
         for (int offset : knight_offsets) {
             // init target square
@@ -326,7 +417,7 @@ void generate_knight_moves(Position &pos, int square, Movelist &moves) {
                         moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
                     }
                     // quiet move
-                    else {
+                    else if (!only_captures) {
                         moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
                     }
                 }
@@ -336,7 +427,7 @@ void generate_knight_moves(Position &pos, int square, Movelist &moves) {
 }
 
 // generate king moves
-void generate_king_moves(Position &pos, int square, Movelist &moves) {
+void generate_king_moves(Position &pos, int square, Movelist &moves, bool only_captures) {
     if (pos.side == white ? pos.board[square] == K : pos.board[square] == k) {
         for (int offset : king_offsets) {
             // init target square
@@ -353,7 +444,7 @@ void generate_king_moves(Position &pos, int square, Movelist &moves) {
                         moves.add_move(encode_move(square, to_square, 0, 1, 0, 0, 0));
                     }
                     // quiet move
-                    else {
+                    else if (!only_captures) {
                         moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
                     }
                 }
@@ -363,7 +454,7 @@ void generate_king_moves(Position &pos, int square, Movelist &moves) {
 }
 
 // generate bishop moves
-void generate_bishop_moves(Position &pos, int square, Movelist &moves) {
+void generate_bishop_moves(Position &pos, int square, Movelist &moves, bool only_captures) {
     // correct color bishop or queen
     if (pos.side == white ? pos.board[square] == B || pos.board[square] == Q : 
         pos.board[square] == b || pos.board[square] == q) {
@@ -391,9 +482,11 @@ void generate_bishop_moves(Position &pos, int square, Movelist &moves) {
                     break;
 
                 }
-                // hits empty square
-                if (piece == e) {
-                    moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                if (!only_captures) {
+                    // hits empty square
+                    if (piece == e) {
+                        moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                    }
                 }
 
                 // increment target square
@@ -404,7 +497,7 @@ void generate_bishop_moves(Position &pos, int square, Movelist &moves) {
 }
 
 // generate rook moves
-void generate_rook_moves(Position &pos, int square, Movelist &moves) {
+void generate_rook_moves(Position &pos, int square, Movelist &moves, bool only_captures) {
     // correct color rook or queen
     if (pos.side == white ? pos.board[square] == R || pos.board[square] == Q : 
         pos.board[square] == r || pos.board[square] == q) {
@@ -432,10 +525,12 @@ void generate_rook_moves(Position &pos, int square, Movelist &moves) {
                     break;
 
                 }
-                // hits empty square
-                if (piece == e) {
-                    moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
-                }
+                if (!only_captures) {
+                    // hits empty square
+                    if (piece == e) {
+                        moves.add_move(encode_move(square, to_square, 0, 0, 0, 0, 0));
+                    }
+                }                
 
                 // increment target square
                 to_square += offset;
@@ -465,29 +560,85 @@ int generate_pseudo_moves(Position &pos, Movelist &moves) {
                 break;
             case N:
             case n:
-                generate_knight_moves(pos, square, moves);
+                generate_knight_moves(pos, square, moves, false);
                 break;
 
             case B:
             case b:
-                generate_bishop_moves(pos, square, moves);
+                generate_bishop_moves(pos, square, moves, false);
                 break;
 
             case R:
             case r:
-                generate_rook_moves(pos, square, moves);
+                generate_rook_moves(pos, square, moves, false);
                 break;
             
             case Q:
             case q:
-                generate_bishop_moves(pos, square, moves);
-                generate_rook_moves(pos, square, moves);
+                generate_bishop_moves(pos, square, moves, false);
+                generate_rook_moves(pos, square, moves, false);
                 break;
             
             case K:
             case k:
-                generate_king_moves(pos, square, moves);
+                generate_king_moves(pos, square, moves, false);
                 generate_castling_moves(pos, square, moves);
+                break;
+
+            default:
+                break;
+            }
+
+        }
+    }
+
+    return moves.count;
+}
+
+// pseudo-legal tactical move generator, generates captures and queen promotions
+int generate_pseudo_tactical(Position &pos, Movelist &moves) {
+
+    // empty out movelist
+    moves.reset();
+
+    //int square;
+    // loop over all squares of the board
+    for (int rank = 0; rank < 8; rank++) {
+        for (int file = 0; file < 8; file++) {
+            // square as 0..127
+            int square = rank * 16 + file;
+
+            switch (pos.board[square])
+            {
+            case P:
+            case p:
+                generate_tactical_pawn_moves(pos, square, moves);
+                break;
+            case N:
+            case n:
+                generate_knight_moves(pos, square, moves, true);
+                break;
+
+            case B:
+            case b:
+                generate_bishop_moves(pos, square, moves, true);
+                break;
+
+            case R:
+            case r:
+                generate_rook_moves(pos, square, moves, true);
+                break;
+            
+            case Q:
+            case q:
+                generate_bishop_moves(pos, square, moves, true);
+                generate_rook_moves(pos, square, moves, true);
+                break;
+            
+            case K:
+            case k:
+                generate_king_moves(pos, square, moves, true);
+                //generate_castling_moves(pos, square, moves);
                 break;
 
             default:
