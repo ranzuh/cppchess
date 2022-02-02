@@ -1,6 +1,3 @@
-#include <iostream>
-#include <string>
-#include <map>
 #include "position.h"
 #include "movegen.h"
 
@@ -14,22 +11,8 @@ int bishop_offsets[] = { -17, -15, 15, 17 };
 int rook_offsets[] = { -16, -1, 1, 16 };
 int king_offsets[] = { -17, -16, -15, -1, 1, 15, 16, 17 };
 
-void Movelist::add_move(int move) {
-    // add move to the move list
-    moves[count] = move;
-    // increment move count
-    count++;
-}
-
-void Movelist::reset() {
-    count = 0;
-}
-
-//uint64_t call_count = 0;
-
 // is given square attacked by given side
-int is_square_attacked(Position &pos, int square, int side) {
-    //call_count++;
+inline int is_square_attacked(Position &pos, int square, int side) {
     // pawn attacks
     if (side == white) {
         // attacker square not empty and its a correct color pawn

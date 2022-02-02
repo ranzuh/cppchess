@@ -1,9 +1,6 @@
-#include <iostream>
 #include "position.h"
 #include "hashtable.h"
 #include "search.h"
-
-using namespace std;
 
 /////////////////////////////////////
 // TRANSPOSITION TABLE AND HASHING //
@@ -21,6 +18,7 @@ uint64_t castle_keys[16];
 // random side key
 uint64_t side_key;
 
+// transition table structure
 struct tt {
     uint64_t key;   // hash key
     int depth;      // search depth
@@ -35,7 +33,6 @@ const int hash_table_size = 8 * 1024 * 1024 / sizeof(tt);
 tt hash_table[hash_table_size];
 
 // pseudo random number state
-
 unsigned int state = 1804289383;
 
 // generate 32-bit pseudo random numbers
@@ -135,6 +132,7 @@ uint64_t generate_hash_key(Position &pos) {
     return final_key;
 }
 
+// reset the hash table
 void clear_hash_table() {
     for (tt &entry : hash_table) {
         entry.key = 0;
@@ -144,6 +142,7 @@ void clear_hash_table() {
     }
 }
 
+// probe the hash table
 int read_hash_entry(uint64_t hash_key, int alpha, int beta, int depth) {
     tt *hash_entry = &hash_table[hash_key % hash_table_size];
 
@@ -168,6 +167,7 @@ int read_hash_entry(uint64_t hash_key, int alpha, int beta, int depth) {
     return no_hash_entry;
 }
 
+// write in the hash table
 void write_hash_entry(uint64_t hash_key, int score, int depth, int hash_flag) {
     tt *hash_entry = &hash_table[hash_key % hash_table_size];
 

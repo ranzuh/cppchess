@@ -1,6 +1,4 @@
 #include "position.h"
-//#include "evaluation.h"
-#include <iostream>
 
 ////////////////
 // evaluation //
@@ -86,155 +84,98 @@ int mirror_square[] = {
      0,  1,  2,  3,  4,  5,  6,  7,
 };
 
+// map square in 0..127 -> 0..63
 inline int get_square_in_64(int square) {
     return (square >> 4) * 8 + (square & 7);
 }
 
-int evaluate_white_pawn_structure(Position pos, int square) {
-    bool is_passed = true;
-    bool is_isolated = true;
-
-
-    while (square > h7) {
-        if (pos.board[square - 15] == p ||
-            pos.board[square - 16] == p ||
-            pos.board[square - 16] == P ||
-            pos.board[square - 17] == p) {
-            is_passed = false;
-            break;
-        }
-        square -= 16;
-    }
-    
-    int file = square & 7;
-    square = file + 16;
-    while (square < a1) {
-        if (pos.board[square - 1] == P || pos.board[square + 1] == P) {
-            is_isolated = false;
-            break;
-        }
-        square += 16;
-    }
-
-    // cout << "passed: " << is_passed << endl;
-    // cout << "isolated: " << is_isolated << endl;
-    return (is_passed * 50) - (is_isolated * 10);
-}
-
-int evaluate_black_pawn_structure(Position pos, int square) {
-    bool is_passed = true;
-    bool is_isolated = true;
-
-    while (square < a2) {
-        if (pos.board[square + 15] == P || 
-            pos.board[square + 16] == P || 
-            pos.board[square + 16] == p || 
-            pos.board[square + 17] == P) {
-            is_passed = false;
-            break;
-        }
-        square += 16;
-    }
-    
-    int file = square & 7;
-    square = file + 16;
-    while (square < a1) {
-        if (pos.board[square - 1] == p || pos.board[square + 1] == p) {
-            is_isolated = false;
-            break;
-        }
-        square += 16;
-    }
-
-    // cout << "passed: " << is_passed << endl;
-    // cout << "isolated: " << is_isolated << endl;
-    return (is_passed * 50) - (is_isolated * 10);
-    
-}
-
-/* pawn_rank[x][y] is the rank of the least advanced pawn of color x on file
-   y - 1. There are "buffer files" on the left and right to avoid special-case
-   logic later. If there's no pawn on a rank, we pretend the pawn is
-   impossibly far advanced (0 for LIGHT and 7 for DARK). This makes it easy to
-   test for pawns on a rank and it simplifies some pawn evaluation code. */
+// store least advanced pawn on each file for each side
+// 0 and 9 files are used as a buffer to help with isolated 
+// and backward pawn calculations.
 int pawn_rank[2][10];
 
-#define DOUBLED_PAWN_PENALTY		10
-#define ISOLATED_PAWN_PENALTY		20
-#define BACKWARDS_PAWN_PENALTY		8
-#define PASSED_PAWN_BONUS			20
-#define ROOK_SEMI_OPEN_FILE_BONUS	10
-#define ROOK_OPEN_FILE_BONUS		15
-#define ROOK_ON_SEVENTH_BONUS		20
+// scores for pawn structures
+#define doubled_pawn_penalty        10
+#define isolated_pawn_penalty       20
+#define backwards_pawn_penalty      8
+#define passed_pawn_bonus           20
+#define rook_semi_open_file_bonus   10
+#define rook_open_file_bonus        15
+#define rook_on_seventh_bonus       20
 
-
+// evaluate white pawn structures
 int eval_white_pawn(int square, int rank, int file) {
     int score = 0;
 
+    // increment file (remember I used 0..9 files)
     file += 1;
 
-    /* if there's a pawn behind this one, it's doubled */
+    // if this pawn is not the least advanced one, its doubled
 	if (pawn_rank[white][file] > rank)
-        score -= DOUBLED_PAWN_PENALTY;
+        score -= doubled_pawn_penalty;
 
-	/* if there aren't any friendly pawns on either side of
-	   this one, it's isolated */
+	// if no friendly pawns on adjacent files its isolated
 	if ((pawn_rank[white][file - 1] == 0) && (pawn_rank[white][file + 1] == 0))
-        score -= ISOLATED_PAWN_PENALTY;
+        score -= isolated_pawn_penalty;
 
-	/* if it's not isolated, it might be backwards */
+	// if pawn not isolated it might be backwards
 	else if ((pawn_rank[white][file - 1] < rank) && (pawn_rank[white][file + 1] < rank))
-		score -= BACKWARDS_PAWN_PENALTY;
+		score -= backwards_pawn_penalty;
 
-	/* add a bonus if the pawn is passed */
+	// give bonus if pawn is passed
 	if ((pawn_rank[black][file - 1] >= rank) &&
 		    (pawn_rank[black][file] >= rank) &&
 		    (pawn_rank[black][file + 1] >= rank))
-		score += (7 - rank) * PASSED_PAWN_BONUS;
+		score += (7 - rank) * passed_pawn_bonus;
 
 	return score;
 }
 
+// evaluate white pawn structures
 int eval_black_pawn(int square, int rank, int file) {
     int score = 0;
 
+    // increment file (remember I used 0..9 files)
     file += 1;
 
-    /* if there's a pawn behind this one, it's doubled */
+    // if this pawn is not the least advanced one, its doubled
 	if (pawn_rank[black][file] < rank)
-		score -= DOUBLED_PAWN_PENALTY;
+		score -= doubled_pawn_penalty;
 
-	/* if there aren't any friendly pawns on either side of
-	   this one, it's isolated */
+	// if no friendly pawns on adjacent files its isolated
 	if ((pawn_rank[black][file - 1] == 7) && (pawn_rank[black][file + 1] == 7))
-		score -= ISOLATED_PAWN_PENALTY;
+		score -= isolated_pawn_penalty;
 
-	/* if it's not isolated, it might be backwards */
+	// if pawn not isolated it might be backwards
 	else if ((pawn_rank[black][file - 1] > rank) && (pawn_rank[black][file + 1] > rank))
-		score -= BACKWARDS_PAWN_PENALTY;
+		score -= backwards_pawn_penalty;
 
-	/* add a bonus if the pawn is passed */
+	// give bonus if pawn is passed
 	if ((pawn_rank[white][file - 1] <= rank) &&
 			(pawn_rank[white][file] <= rank) &&
 			(pawn_rank[white][file + 1] <= rank))
-		score += rank * PASSED_PAWN_BONUS;
+		score += rank * passed_pawn_bonus;
 
 	return score;
 }
 
-
+/* evaluate position based on material, piece-square tables and
+   basic pawn structures */
 int evaluate_position(Position &pos) {
 	int file, rank;
 	int score = 0;
     int square;
     int piece;
 
-	/* this is the first pass: set up pawn_rank */
+	/* first store least advanced pawns on every file */
+
+    // init each file to max advancement for each side
 	for (int i = 0; i < 10; i++) {
 		pawn_rank[white][i] = 0;
 		pawn_rank[black][i] = 7;
 	}
 
+    // store the pawns
     for (rank = 1; rank < 7; rank++) {
         for (file = 0; file < 8; file++) {
             square = rank * 16 + file;
@@ -250,7 +191,7 @@ int evaluate_position(Position &pos) {
         }
 	}
 
-    /* this is the second pass: evaluate each piece */
+    /* evaluate each pawn or piece */
 
     for (rank = 0; rank < 8; rank++) {
         for (file = 0; file < 8; file++) {
@@ -259,6 +200,7 @@ int evaluate_position(Position &pos) {
 
             if (pos.board[square] != e) {
                 piece = pos.board[square];
+                // sum the material
                 score += piece_values[piece];
                 switch (piece) {
                 case P:
@@ -309,73 +251,4 @@ int evaluate_position(Position &pos) {
         }
     }
     return pos.side == white ? score : -score;
-}
-
-
-int evaluate_position2(Position &pos) {
-    int score = 0;
-    int square, square_in_64, piece;
-    for (int rank = 0; rank < 8; rank++) {
-        for (int file = 0; file < 8; file++) {
-            // square as 0..127
-            square = rank * 16 + file;
-            //square_in_64 = rank * 8 + file;
-            piece = pos.board[square];
-            //cout << square_in_64 << endl;
-            if (piece != e) {
-                square_in_64 = get_square_in_64(square);
-                score += piece_values[piece];
-                
-                switch (piece) {
-                case P:
-                    score += pawn_table[square_in_64];
-                    //score += evaluate_white_pawn_structure(pos, square);
-                    //cout << score << endl;
-                    break;
-                case N:
-                    score += knight_table[square_in_64];
-                    break;
-                case B:
-                    score += bishop_table[square_in_64];
-                    break;
-                case R:
-                    score += rook_table[square_in_64];
-                    break;
-                case Q:
-                    score += queen_table[square_in_64];
-                    break;
-                case K:
-                    score += king_table[square_in_64];
-                    break;
-                case p:
-                    score -= pawn_table[mirror_square[square_in_64]];
-                    //score -= evaluate_black_pawn_structure(pos, square);
-                    //cout << score << endl;
-                    break;
-                case n:
-                    score -= knight_table[mirror_square[square_in_64]];
-                    break;
-                case b:
-                    score -= bishop_table[mirror_square[square_in_64]];
-                    break;
-                case r:
-                    score -= rook_table[mirror_square[square_in_64]];
-                    break;
-                case q:
-                    score -= queen_table[mirror_square[square_in_64]];
-                    break;
-                case k:
-                    score -= king_table[mirror_square[square_in_64]];
-                    break;
-                
-                default:
-                    break;
-                }
-            }
-        }
-    }
-    // assert(pos.side == white ? pos.material_score == score : -pos.material_score == -score);
-    
-    return pos.side == white ? score : -score;
-    //return pos.side == white ? pos.material_score : -pos.material_score;
 }

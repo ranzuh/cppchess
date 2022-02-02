@@ -10,8 +10,16 @@ struct Movelist
         count = 0;
     }
 
-    void add_move(int move);
-    void reset();
+    inline void add_move(int move) {
+        // add move to the move list
+        moves[count] = move;
+        // increment move count
+        count++;
+    }
+
+    inline void reset() {
+        count = 0;
+    }
 };
 
 // encode moves to 21 bit representation
@@ -87,7 +95,5 @@ void print_movelist(Movelist &moves);
 int is_square_attacked(Position &pos, int square, int side);
 
 string get_move_string(int move);
-
-extern uint64_t call_count;
 
 #endif

@@ -24,5 +24,6 @@ int read_hash_entry(uint64_t hash_key, int alpha, int beta, int depth);
 void write_hash_entry(uint64_t hash_key, int score, int depth, int hash_flag);
 void init_random_keys();
 void clear_hash_table();
+uint64_t generate_hash_key(Position &pos);
 
 #endif

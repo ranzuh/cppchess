@@ -77,7 +77,7 @@ int main() {
     Position game_position;
     clear_hash_table();
 
-    int debug = 0;
+    int debug = 1;
 
     if (debug) {
         // game_position.parse_fen("6rk/8/8/8/8/8/8/RK6 w - - 0 1");
@@ -90,13 +90,14 @@ int main() {
         game_position.print_board();
         game_position.print_board_stats();
 
-        // seconds_per_move = 10;
-        // stopped = 0;
-        // go_start = chrono::steady_clock::now();
+        time_set = 1;
+        auto start_time = chrono::steady_clock::now();
+        auto move_time_chrono = chrono::milliseconds(5000);
+        stop_time = start_time + move_time_chrono;
 
-        // search_position(game_position, 10);
-        // cout << "Quiescence search nodes: " << quiesc_nodes << endl;
-        // cout << "Table hits:              " << table_hits << endl;
+        search_position(game_position, 10);
+        cout << "Quiescence search nodes: " << quiesc_nodes << endl;
+        cout << "Table hits:              " << table_hits << endl;
 		
 
 		//run_perft(game_position, 6);

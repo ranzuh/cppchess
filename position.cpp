@@ -117,9 +117,6 @@ void Position::set_material() {
     material_score = score;
 }
 
-// generate "almost unique" position ID aka hash key from scratch
-uint64_t generate_hash_key(Position &pos);
-
 // parses fen string and sets it to board
 void Position::parse_fen(string fen) {
     reset_board();
