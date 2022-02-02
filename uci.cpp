@@ -130,22 +130,101 @@ void parse_position(Position &pos, string command) {
 
 void search_position(Position &pos, int depth);
 
+int time_set = 0;
+chrono::steady_clock::time_point stop_time;
+int time_left = -1;
+chrono::steady_clock::time_point go_start;
+int stopped = 0;
+int seconds_per_move = 5;
+
+void reset_time_control() {
+    stopped = 0;
+    time_set = 0;
+    stop_time = chrono::steady_clock::now();
+    time_left = -1;
+}
+
+void check_time() {
+    if (time_set) {
+        if (chrono::steady_clock::now() > stop_time) {
+            //cout << "5 sec passed" << endl;
+            stopped = 1;
+        }
+    }
+}
+
 // parse UCI "go" command
 void parse_go(Position &pos, string command) {
     int depth = -1;
+
+    reset_time_control();
+
+    uint64_t increment = 0;
+    uint64_t move_time = -1;
+
+    if (command.find("wtime") != string::npos && pos.side == white) {
+        string moves_substring = command.substr(command.find("wtime") + 6);
+        string wtime_string = moves_substring.substr(0, moves_substring.find(" "));
+        time_left = stoi(wtime_string);
+        //cout << "wtime: " << time_left << endl;
+    }
+    if (command.find("btime") != string::npos && pos.side == black) {
+        string moves_substring = command.substr(command.find("btime") + 6);
+        string btime_string = moves_substring.substr(0, moves_substring.find(" "));
+        time_left = stoi(btime_string);
+        //cout << "btime: " << time_left << endl;
+    }
+    if (command.find("winc") != string::npos && pos.side == white) {
+        string moves_substring = command.substr(command.find("winc") + 5);
+        string winc_string = moves_substring.substr(0, moves_substring.find(" "));
+        increment = stoi(winc_string);
+        //cout << "winc: " << increment << endl;
+    }
+    if (command.find("binc") != string::npos && pos.side == black) {
+        string moves_substring = command.substr(command.find("binc") + 5);
+        string binc_string = moves_substring.substr(0, moves_substring.find(" "));
+        increment = stoi(binc_string);
+        //cout << "binc: " << increment << endl;
+    }
+    if (command.find("movetime") != string::npos) {
+        string moves_substring = command.substr(command.find("movetime") + 9);
+        string movetime_string = moves_substring.substr(0, moves_substring.find(" "));
+        move_time = stoi(movetime_string);
+        time_left = move_time;
+        cout << "move_time: " << move_time << endl;
+    }
+
+    if (time_left != -1) {
+        time_set = 1;
+    }
+
+    if (move_time == -1) {
+        move_time = time_left / 40;
+        move_time += increment / 2;
+
+        if (move_time >= time_left) 
+            move_time -= 500;
+        
+        if (move_time <= 0)
+            move_time = 100;
+    }
+    
+    auto start_time = chrono::steady_clock::now();
+    auto move_time_chrono = chrono::milliseconds(move_time);
+    stop_time = start_time + move_time_chrono;
 
     if (command.find("depth") != string::npos) {
         int index = command.find("depth");
         depth = stoi(command.substr(index + 6));
     }
     else {
-        depth = 30;
+        depth = 64;
     }
 
-    // start timing
-    stopped = 0;
-    //seconds_per_move = 5;
-    go_start = chrono::steady_clock::now();
+    // // start timing
+    // stopped = 0;
+    // //seconds_per_move = 5;
+    // go_start = chrono::steady_clock::now();
 
     //cout << "Depth: " << depth << endl;
 

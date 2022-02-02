@@ -7,6 +7,7 @@
 #include "evaluation.h"
 #include <numeric>
 #include "search.h"
+#include "uci.h"
 
 
 /*
@@ -241,24 +242,9 @@ void order_moves(Position &pos, Movelist &moves, Movelist &scores, int original_
     moves.moves[best_index] = temp;
 }
 
-chrono::steady_clock::time_point go_start;
-int stopped = 0;
-int seconds_per_move = 5;
-
-void check_time() {
-    if (nodes % 2047 == 0) {
-        auto stop = chrono::steady_clock::now();
-        auto duration = chrono::duration_cast<chrono::milliseconds>(stop - go_start);
-        if (duration.count() > (seconds_per_move * 1000)) {
-            //cout << "5 sec passed" << endl;
-            stopped = 1;
-        }
-    }
-}
-
 int quiescence_search(Position &pos, int alpha, int beta) {
 
-    check_time();
+    if (nodes % 2047 == 0) check_time();
 
     // init PV length
     pv_length[ply] = ply;
@@ -365,7 +351,7 @@ int table_hits = 0;
 // negamax search with alpha-beta pruning
 int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
-    check_time();
+    if (nodes % 2047 == 0) check_time();
 
     // init PV length
     pv_length[ply] = ply;
