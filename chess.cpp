@@ -92,10 +92,10 @@ int main() {
 
         time_set = 1;
         auto start_time = chrono::steady_clock::now();
-        auto move_time_chrono = chrono::milliseconds(5000);
+        auto move_time_chrono = chrono::milliseconds(10000);
         stop_time = start_time + move_time_chrono;
 
-        search_position(game_position, 10);
+        search_position(game_position, 20);
         cout << "Quiescence search nodes: " << quiesc_nodes << endl;
         cout << "Table hits:              " << table_hits << endl;
 		

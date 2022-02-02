@@ -172,11 +172,7 @@ struct Compare_move_scores {
     }
 };
 
-// bool compare_move_scores(Position &pos, int move1, int move2) {
-//     return score_move(pos, move1) < score_move(pos, move2);
-// }
-
-
+// insertion sort to order the moves according to scores
 void sort_moves(Position &pos, Movelist &moves) {
     Movelist move_scores;
 
@@ -200,28 +196,6 @@ void sort_moves(Position &pos, Movelist &moves) {
         moves.moves[j + 1] = move;
         move_scores.moves[j + 1] = move_score;
     }
-
-    // // loop over current move within a move list
-    // for (int current_move = 0; current_move < moves.count; current_move++)
-    // {
-    //     // loop over next move within a move list
-    //     for (int next_move = current_move + 1; next_move < moves.count; next_move++)
-    //     {
-    //         // compare current and next move scores
-    //         if (move_scores[current_move] < move_scores[next_move])
-    //         {
-    //             // swap scores
-    //             int temp_score = move_scores[current_move];
-    //             move_scores[current_move] = move_scores[next_move];
-    //             move_scores[next_move] = temp_score;
-                
-    //             // swap moves
-    //             int temp_move = moves.moves[current_move];
-    //             moves.moves[current_move] = moves.moves[next_move];
-    //             moves.moves[next_move] = temp_move;
-    //         }
-    //     }
-    // }
 
     //sort(moves.moves, moves.moves + moves.count, Compare_move_scores(pos));
 }
@@ -454,19 +428,35 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
             nodes++;
 
             ply++;
-            // PVS - principal variation search
-            if (found_pv) {
-                // Assume pv node
-                value = -negamax(pos, depth - 1, -alpha - 1, -alpha, true);
-                // check if assumption was wrong and if it was, do a re-search
+
+            if (depth >= 3 &&
+                    legal_moves > 4 &&
+                    !found_pv &&
+                    !king_attacked &&
+                    !decode_capture(moves.moves[i]) &&
+                    !decode_promotion(moves.moves[i]))
+            {
+                value = -negamax(pos, depth - 2, -alpha - 1, -alpha, true);
+
                 if ((value > alpha) && (value < beta))
                     value = -negamax(pos, depth - 1, -beta, -alpha, true);
             }
-            // normal search
-            else
-                value = -negamax(pos, depth - 1, -beta, -alpha, true);
-            ply--;
+            else {
+                // PVS - principal variation search
+                if (found_pv) {
+                    // Assume pv node
+                    value = -negamax(pos, depth - 1, -alpha - 1, -alpha, true);
+                    // check if assumption was wrong and if it was, do a re-search
+                    if ((value > alpha) && (value < beta))
+                        value = -negamax(pos, depth - 1, -beta, -alpha, true);
+                }
+                // normal search
+                else
+                    value = -negamax(pos, depth - 1, -beta, -alpha, true);
+            }
 
+            
+            ply--;
             leftmost = 0;
             pos.rep_index -= 1;
             
