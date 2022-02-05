@@ -100,7 +100,7 @@ int main() {
         cout << "Table hits:              " << table_hits << endl;
 		
 
-		//run_perft(game_position, 6);
+		// run_perft(game_position, 5);
 
 
     }

@@ -248,12 +248,12 @@ int Position::make_move(int move) {
     int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
 
     // copy board state
-    copy(board, board + 128, board_copy);
-    copy(king_squares, king_squares + 2, king_squares_copy);
-    side_copy = side;
-    enpassant_copy = enpassant;
-    castle_copy = castle;
-    uint64_t hash_copy = hash_key;
+    // copy(board, board + 128, board_copy);
+    // copy(king_squares, king_squares + 2, king_squares_copy);
+    // side_copy = side;
+    // enpassant_copy = enpassant;
+    // castle_copy = castle;
+    // uint64_t hash_copy = hash_key;
 
     // decode move
     int from_square = decode_source(move);
@@ -349,12 +349,12 @@ int Position::make_move(int move) {
     // unmake move if king under check
     if (is_square_attacked(*this, king_squares[side], !side)) {
         // restore board state
-        copy(board_copy, board_copy + 128, board);
-        copy(king_squares_copy, king_squares_copy + 2, king_squares);
-        side = side_copy;
-        enpassant = enpassant_copy;
-        castle = castle_copy;
-        hash_key = hash_copy;
+        // copy(board_copy, board_copy + 128, board);
+        // copy(king_squares_copy, king_squares_copy + 2, king_squares);
+        // side = side_copy;
+        // enpassant = enpassant_copy;
+        // castle = castle_copy;
+        // hash_key = hash_copy;
 
         // illegal move
         return 0;
@@ -370,7 +370,7 @@ int Position::make_move(int move) {
     castle &= castling_board[to_square];
 
     // add new castle to hash
-    hash_key ^= castle_keys[castle]; 
+    hash_key ^= castle_keys[castle];
 
     // change side
     side = !side;

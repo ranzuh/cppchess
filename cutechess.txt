@@ -1,0 +1,1 @@
+cutechess-cli -engine cmd=cppchess091.exe name=091 -engine cmd=cppchess.exe name=092 -each proto=uci tc=10+0.10 -rounds 50 -concurrency 4

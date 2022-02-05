@@ -77,6 +77,7 @@ uint64_t perft(Position &pos, int depth, bool divide) {
             // pos.print_board();
             // getchar();
         }
+        else pos = copy;
     }
 
     return nodes;

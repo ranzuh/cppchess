@@ -308,6 +308,7 @@ int quiescence_search(Position &pos, int alpha, int beta) {
                 }
             }
         }
+        else pos = copy;
 
     }
 
@@ -505,6 +506,7 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
                 }
             }
         }
+        else pos = copy;
     }
 
     // if no legal moves
