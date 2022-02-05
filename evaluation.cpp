@@ -159,6 +159,46 @@ int eval_black_pawn(int square, int rank, int file) {
 	return score;
 }
 
+// evaluate whites rook
+int evaluate_white_rook(int rank, int file) {
+    int score = 0;
+
+    // check if there is black pawn on same file as the rook
+    if (pawn_rank[black][file + 1] == 7) {
+        // check if there is also white pawn on same file as the rook
+        if (pawn_rank[white][file + 1] == 0)
+            score += rook_open_file_bonus;
+        else
+            score += rook_semi_open_file_bonus;
+    }
+
+    // check if rook is on seventh rank
+    if (rank == 1)
+        score += rook_on_seventh_bonus;
+    
+    return score;
+}
+
+// evaluate blacks rook
+int evaluate_black_rook(int rank, int file) {
+    int score = 0;
+
+    // check if there is white pawn on same file as the rook
+    if (pawn_rank[white][file + 1] == 0) {
+        // check if there is also black pawn on same file as the rook
+        if (pawn_rank[black][file + 1] == 7)
+            score += rook_open_file_bonus;
+        else
+            score += rook_semi_open_file_bonus;
+    }
+
+    // check if rook is on second rank
+    if (rank == 6)
+        score += rook_on_seventh_bonus;
+    
+    return score;
+}
+
 /* evaluate position based on material, piece-square tables and
    basic pawn structures */
 int evaluate_position(Position &pos) {
@@ -216,6 +256,7 @@ int evaluate_position(Position &pos) {
                     break;
                 case R:
                     score += rook_table[get_square_in_64(square)];
+                    score += evaluate_white_rook(rank, file);
                     break;
                 case Q:
                     score += queen_table[get_square_in_64(square)];
@@ -236,6 +277,7 @@ int evaluate_position(Position &pos) {
                     break;
                 case r:
                     score -= rook_table[mirror_square[get_square_in_64(square)]];
+                    score -= evaluate_black_rook(rank, file);
                     break;
                 case q:
                     score -= queen_table[mirror_square[get_square_in_64(square)]];
