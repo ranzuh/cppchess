@@ -14,12 +14,12 @@
 
 (development) compile and run with:
 ```
-g++ -std=c++11 chess.cpp position.cpp movegen.cpp -o chess.exe 
-.\chess.exe
+make
+make run
 ```
 
 (release) compile and run with:
 ```
-g++ -std=c++11 -Ofast -flto chess.cpp position.cpp movegen.cpp -o chess.exe
-.\chess.exe
+make release
+make run
 ```
