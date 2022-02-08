@@ -240,12 +240,128 @@ inline int get_square_in_64(int square) {
     return (square >> 4) * 8 + (square & 7);
 }
 
+void Position::unmake_move(int move, int depth) {
+
+    // change side
+    // do this first to make rest easier
+    side = !side;
+    hash_key ^= side_key;
+
+    // decode move
+    int from_square = decode_source(move);
+    int to_square = decode_target(move);
+    int promoted_piece = decode_promotion(move);
+    int is_capture = decode_capture(move);
+    int is_enpassant = decode_enpassant(move);
+    int is_double_pawn = decode_double_pawn(move);
+    int is_castling = decode_castling(move);
+
+    // source piece we know - its in to square
+    // target piece we dont know
+    // store piece
+    int source_piece = board[to_square];
+    int target_piece = previous_piece[depth];
+
+    // make move
+    board[from_square] = board[to_square];
+    board[to_square] = previous_piece[depth];  // todo restore previous piece
+
+    // add same piece to next square if not promotion // reverse should just work
+    if (!promoted_piece) {
+        // remove piece from previous square // reverse should just work
+        hash_key ^= piece_keys[source_piece][get_square_in_64(from_square)];
+        hash_key ^= piece_keys[source_piece][get_square_in_64(to_square)];
+    }
+
+    // update king square
+    if (board[from_square] == K || board[from_square] == k) {
+        king_squares[side] = from_square;
+    }
+
+    // reverse should just work
+    if (is_capture && !is_enpassant) {
+        hash_key ^= piece_keys[target_piece][get_square_in_64(to_square)];
+    }
+
+    // Need to store previous enpassant
+    // hash enpassant if available (remove enpassant square from hash key )
+    if (previous_enpassant[depth] != no_sq) hash_key ^= enpassant_keys[get_square_in_64(previous_enpassant[depth])];
+
+    // reset enpassant square
+    enpassant = previous_enpassant[depth];
+
+    // handle promotion
+    if (promoted_piece != e) {
+        // if promotion set pawn to previous square
+        side == white ? board[from_square] = P : board[from_square] = p;
+
+        // remove piece from previous square // reverse should just work
+        hash_key ^= piece_keys[board[from_square]][get_square_in_64(from_square)];
+
+        // add promoted piece to square // reverse should just work
+        hash_key ^= piece_keys[promoted_piece][get_square_in_64(to_square)];
+    }
+    else if (is_enpassant) {
+        side == white ? board[to_square + 16] = p : board[to_square - 16] = P;
+        // hash enpassant
+        side == white ? hash_key ^= piece_keys[p][get_square_in_64(to_square + 16)] : hash_key ^= piece_keys[P][get_square_in_64(to_square - 16)];
+    }
+    else if (is_double_pawn) {
+        side == white ? enpassant = previous_enpassant[depth] : enpassant = previous_enpassant[depth];
+        // hashing
+        side == white ? hash_key ^= enpassant_keys[get_square_in_64(to_square + 16)] : hash_key ^= enpassant_keys[get_square_in_64(to_square - 16)];
+    }
+    else if (is_castling) {
+        switch (to_square) {
+            // white queen side castling
+            case c1:
+                board[d1] = e;
+                board[a1] = R;
+                hash_key ^= piece_keys[R][get_square_in_64(a1)];
+                hash_key ^= piece_keys[R][get_square_in_64(d1)];
+                break;
+            // white king side castling
+            case g1:
+                board[f1] = e;
+                board[h1] = R;
+                hash_key ^= piece_keys[R][get_square_in_64(h1)];
+                hash_key ^= piece_keys[R][get_square_in_64(f1)];
+                break;
+            // black queen side castling
+            case c8:
+                board[d8] = e;
+                board[a8] = r;
+                hash_key ^= piece_keys[r][get_square_in_64(a8)];
+                hash_key ^= piece_keys[r][get_square_in_64(d8)];
+                break;
+            // black king    side castling
+            case g8:
+                board[f8] = e;
+                board[h8] = r;
+                hash_key ^= piece_keys[r][get_square_in_64(h8)];
+                hash_key ^= piece_keys[r][get_square_in_64(f8)];
+                break;
+            default:
+                break;
+        }
+    }
+    // remove old castle from hash
+    hash_key ^= castle_keys[castle];
+
+    castle = previous_castle[depth];
+
+    // add new castle to hash
+    hash_key ^= castle_keys[castle];
+
+    enpassant = previous_enpassant[depth];
+    castle = previous_castle[depth];
+
+}
+
 // make a move on the board if its legal
 // returns 1 if legal, 0 if illegal
 // todo differentiate between captures and all_moves
-int Position::make_move(int move) {
-    // define board state copies
-    int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
+int Position::make_move(int move, int depth) {
 
     // copy board state
     // copy(board, board + 128, board_copy);
@@ -267,6 +383,11 @@ int Position::make_move(int move) {
     // store piece
     int source_piece = board[from_square];
     int target_piece = board[to_square];
+
+    // store position variables for unmake
+    previous_enpassant[depth] = enpassant;
+    previous_castle[depth] = castle;
+    previous_piece[depth] = target_piece;
 
     // make move
     board[to_square] = board[from_square];
@@ -347,7 +468,7 @@ int Position::make_move(int move) {
     }
 
     // unmake move if king under check
-    if (is_square_attacked(*this, king_squares[side], !side)) {
+    bool in_check = is_square_attacked(*this, king_squares[side], !side);
         // restore board state
         // copy(board_copy, board_copy + 128, board);
         // copy(king_squares_copy, king_squares_copy + 2, king_squares);
@@ -357,8 +478,8 @@ int Position::make_move(int move) {
         // hash_key = hash_copy;
 
         // illegal move
-        return 0;
-    }
+        //return 0;
+    //}
 
     // remove old castle from hash
     hash_key ^= castle_keys[castle];
@@ -376,10 +497,9 @@ int Position::make_move(int move) {
     side = !side;
     hash_key ^= side_key;
 
-    // increment repetition index & store hash key
-    rep_index += 1;
-    rep_stack[rep_index] = hash_key;
-
+    // illegal move
+    if (in_check) return 0;
     // legal move
-    return 1;
+    else return 1;
+    
 }

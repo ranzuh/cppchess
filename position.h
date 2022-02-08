@@ -89,13 +89,21 @@ struct Position {
     int rep_index = 0;
     uint64_t rep_stack[512] = { 0 };
 
+    // copies for unmake
+    int previous_enpassant[64] = { 0 };
+    int previous_castle[64] = { 0 };
+    int previous_piece[64] = { 0 };
+
     // following defined in board.cpp
     void print_board();
     void reset_board();
     void parse_fen(string fen);
     void print_board_stats();
-    int make_move(int move);
+    int make_move(int move, int depth);
+    void unmake_move(int move, int depth);
     void set_material();
 };
+
+
 
 #endif

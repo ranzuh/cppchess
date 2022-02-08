@@ -28,41 +28,21 @@ struct tt {
 };
 
 // init hashtable size to 8 MB
-const int hash_table_size = 8 * 1024 * 1024 / sizeof(tt);
+const int hash_table_size = 20 * 1024 * 1024 / sizeof(tt);
 
 tt hash_table[hash_table_size];
 
-// pseudo random number state
-unsigned int state = 1804289383;
+uint64_t state = 0x536ABC791996ULL; /* The state must be seeded with a nonzero value. */
 
-// generate 32-bit pseudo random numbers
-unsigned int get_random_U32_number() {
-    // get current state
-    unsigned int number = state;
-
-    // XOR Shift algorithm
-    number ^= number << 13;
-    number ^= number >> 17;
-    number ^= number << 5;
-
-    // update random number state
-    state = number;
-
-    return state;
-}
-
-// generate 64-bit pseudo random numbers
+/* xorshift64* https://en.wikipedia.org/wiki/Xorshift 
+   generate pseudo random 64bit number*/
 uint64_t get_random_U64_number() {
-    // init 4 random numbers
-    uint64_t n1, n2, n3, n4;
-
-    n1 = (uint64_t)(get_random_U32_number() & 0xffff);
-    n2 = (uint64_t)(get_random_U32_number() & 0xffff);
-    n3 = (uint64_t)(get_random_U32_number() & 0xffff);
-    n4 = (uint64_t)(get_random_U32_number() & 0xffff);
-
-    // return random number
-    return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
+	uint64_t x = state;	
+	x ^= x >> 12; // a
+	x ^= x << 25; // b
+	x ^= x >> 27; // c
+	state = x;
+	return x * 0x2545F4914F6CDD1DULL;
 }
 
 void init_random_keys() {

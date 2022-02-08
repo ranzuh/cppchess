@@ -46,11 +46,11 @@ uint64_t perft(Position &pos, int depth, bool divide) {
     //copy_board(pos);
 
     // copy board state
-    Position copy = pos;
+    //Position copy = pos;
     
     for (int i = 0; i < moves.count; i++) {
         //print_board();
-        if (pos.make_move(moves.moves[i])) {
+        if (pos.make_move(moves.moves[i], depth)) {
             // pos.print_board();
             // getchar();
             uint64_t result = perft(pos, depth - 1, false);
@@ -72,12 +72,13 @@ uint64_t perft(Position &pos, int depth, bool divide) {
             //restore_board(pos);
 
             // restore board state
-            pos = copy;
+            //pos = copy;
+            pos.unmake_move(moves.moves[i], depth);
 
-            // pos.print_board();
-            // getchar();
+            //pos.print_board();
+            //getchar();
         }
-        else pos = copy;
+        else pos.unmake_move(moves.moves[i], depth); //pos = copy;
     }
 
     return nodes;

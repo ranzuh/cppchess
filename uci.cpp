@@ -111,7 +111,9 @@ void parse_position(Position &pos, string command) {
             int parsed_move = parse_move(pos, s);
             //cout << s << endl;
             if (parsed_move) {
-                pos.make_move(parsed_move);
+                pos.make_move(parsed_move, 0);
+                pos.rep_index += 1;
+                pos.rep_stack[pos.rep_index] = pos.hash_key;
             }
             else {
                 cout << "illegal move" << endl;
@@ -279,7 +281,7 @@ void uci_loop() {
             Position new_pos;
             pos =  new_pos;
             parse_position(pos, "position startpos");
-            //clear_hash_table();
+            clear_hash_table();
             pos.print_board();
             pos.print_board_stats();
         }

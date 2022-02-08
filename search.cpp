@@ -240,7 +240,9 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     }
 
     // copy board state
-    Position copy = pos;
+    //Position copy = pos;
+
+    uint64_t hash = pos.hash_key;
 
     // // define board state copies
     // int board_copy[128], king_squares_copy[2], side_copy, enpassant_copy, castle_copy;
@@ -269,16 +271,23 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     // loop over all captures and Q promotions
     for (int i = 0; i < moves.count; i++) {
         //order_moves(pos, moves, scores, i);
-        if (pos.make_move(moves.moves[i])) {
+        if (pos.make_move(moves.moves[i], ply)) {
             nodes++;
             quiesc_nodes++;
+
+            // increment repetition index & store hash key
+            pos.rep_index += 1;
+            pos.rep_stack[pos.rep_index] = pos.hash_key;
+            
             ply++;
             int value = -quiescence_search(pos, -beta, -alpha);
             ply--;
+
             pos.rep_index -= 1;
             
             // restore board state
-            pos = copy;
+            //pos = copy;
+            pos.unmake_move(moves.moves[i], ply);
 
             // // restore board state
             // copy(board_copy, board_copy + 128, pos.board);
@@ -308,7 +317,9 @@ int quiescence_search(Position &pos, int alpha, int beta) {
                 }
             }
         }
-        else pos = copy;
+        //else pos = copy;
+        else pos.unmake_move(moves.moves[i], ply);
+        assert(pos.hash_key == hash);
 
     }
 
@@ -351,22 +362,29 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
     // null move pruning
     if (null_move && depth >= 3 && !pv_node && !king_attacked && ply) {
-        Position copy = pos;
+        //Position copy = pos;
+        // hold copy of enpassant to unmake later
+        int copy_enpassant = pos.enpassant;
+        
         // make null move
         pos.side = !pos.side;
         // hash side change
         pos.hash_key ^= side_key;
-
         // hash enpassant if available (remove enpassant square from hash key )
         if (pos.enpassant != no_sq) pos.hash_key ^= enpassant_keys[get_square_in_64(pos.enpassant)];
-
         pos.enpassant = no_sq;
+
         ply++;
         // can change 2 to other reduced depth
         int score = -negamax(pos, depth - 1 - 2, -beta, -beta + 1, false);
         ply--;
-        // restore board state
-        pos = copy;
+
+        // restore board state (unmake)
+        //pos = copy;
+        pos.side = !pos.side;
+        pos.hash_key ^= side_key;
+        if (copy_enpassant != no_sq) pos.hash_key ^= enpassant_keys[get_square_in_64(copy_enpassant)];
+        pos.enpassant = copy_enpassant;
 
         if (stopped) return 0;
 
@@ -391,7 +409,7 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
         }
     }
 
-    if (depth == 0) {
+    if (depth <= 0) {
         ply++;
         value = quiescence_search(pos, alpha, beta);
         ply--;
@@ -414,7 +432,8 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
     sort_moves(pos, moves);
 
     // copy board state
-    Position copy = pos;
+    //Position copy = pos;
+    uint64_t hash = pos.hash_key;
 
     int legal_moves = 0;
 
@@ -424,11 +443,14 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
         //     cout << endl;
         // }
         //order_moves(pos, moves, scores, i);
-        if (pos.make_move(moves.moves[i])) {
+        if (pos.make_move(moves.moves[i], ply)) {
             legal_moves++;
             nodes++;
 
             ply++;
+            // increment repetition index & store hash key
+            pos.rep_index += 1;
+            pos.rep_stack[pos.rep_index] = pos.hash_key;
 
             if (depth >= 3 &&
                     legal_moves > 4 &&
@@ -461,8 +483,10 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
             leftmost = 0;
             pos.rep_index -= 1;
             
+            
             // restore board state
-            pos = copy;
+            //pos = copy;
+            pos.unmake_move(moves.moves[i], ply);
 
             // restore board state
             // copy(board_copy, board_copy + 128, pos.board);
@@ -506,7 +530,9 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
                 }
             }
         }
-        else pos = copy;
+        //else pos = copy;
+        else pos.unmake_move(moves.moves[i], ply);
+        assert(pos.hash_key == hash);
     }
 
     // if no legal moves
