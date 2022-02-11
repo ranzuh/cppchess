@@ -353,15 +353,18 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
     bool pv_node = beta - alpha > 1;
 
+    //cout << found_pv << ", " << pv_node << endl;
+    //assert(found_pv == pv_node);
+
     int hash_flag = hash_flag_alpha;
     int value = read_hash_entry(pos.hash_key, alpha, beta, depth);
-    if (ply && value != no_hash_entry && !pv_node) {
+    if (ply && value != no_hash_entry && !found_pv) {
         table_hits++;
         return value;
     }
 
     // null move pruning
-    if (null_move && depth >= 3 && !pv_node && !king_attacked && ply) {
+    if (null_move && depth >= 3 && !found_pv && !king_attacked && ply) {
         //Position copy = pos;
         // hold copy of enpassant to unmake later
         int copy_enpassant = pos.enpassant;
@@ -376,7 +379,7 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
         ply++;
         // can change 2 to other reduced depth
-        int score = -negamax(pos, depth - 1 - 2, -beta, -beta + 1, false);
+        int score = -negamax(pos, depth - 1 - 3, -beta, -beta + 1, false);
         ply--;
 
         // restore board state (unmake)
@@ -459,7 +462,7 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
                     !decode_capture(moves.moves[i]) &&
                     !decode_promotion(moves.moves[i]))
             {
-                value = -negamax(pos, depth - 2, -alpha - 1, -alpha, true);
+                value = -negamax(pos, max(depth - 3, 1), -alpha - 1, -alpha, true);
 
                 if ((value > alpha) && (value < beta))
                     value = -negamax(pos, depth - 1, -beta, -alpha, true);
@@ -562,7 +565,7 @@ int aspiration_window = 50;
 // search position for the best move
 void search_position(Position &pos, int depth) {
     // clear hash table, good idea or not?
-    //clear_hash_table();
+    clear_hash_table();
 
     int score = 0;
 
@@ -630,5 +633,5 @@ void search_position(Position &pos, int depth) {
         }
         
     }
-    cout << "bestmove " << get_move_string(pv_table[0][0]) << endl; 
+    cout << "bestmove " << get_move_string(pv_table[0][0]) << endl;
 }
