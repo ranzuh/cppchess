@@ -223,13 +223,6 @@ void parse_go(Position &pos, string command) {
         depth = 64;
     }
 
-    // // start timing
-    // stopped = 0;
-    // //seconds_per_move = 5;
-    // go_start = chrono::steady_clock::now();
-
-    //cout << "Depth: " << depth << endl;
-
     // search position
     search_position(pos, depth);
 }

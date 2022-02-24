@@ -22,7 +22,6 @@ struct Movelist
     }
 };
 
-// encode moves to 21 bit representation
 /* 
 Move encoding
 
@@ -33,8 +32,6 @@ Move encoding
 0000 1000 0000 0000 0000 0000   double pawn flag    1 bit   0x1
 0001 0000 0000 0000 0000 0000   en passant flag     1 bit   0x1
 0010 0000 0000 0000 0000 0000   castling flag       1 bit   0x1
-
-TODO: Test if #define macros are more performant
 
 */
 inline int encode_move(
@@ -55,6 +52,8 @@ inline int encode_move(
         enpassant << 20 | 
         castling << 21;
 }
+
+/* Decoding move */
 
 inline int decode_source(int move) {
     return move & 0x7f;
@@ -84,16 +83,13 @@ inline int decode_castling(int move) {
     return (move >> 21) & 0x1;
 }
 
+/* Forward declarations */
+
 int generate_pseudo_moves(Position &pos, Movelist &moves);
-
 int generate_pseudo_tactical(Position &pos, Movelist &moves);
-
 int generate_legal_moves(Position &pos, Movelist &moves);
-
 void print_movelist(Movelist &moves);
-
 int is_square_attacked(Position &pos, int square, int side);
-
 string get_move_string(int move);
 
 #endif

@@ -3,3 +3,4 @@
 .vscode
 cppchess
 *.o
+results.txt
