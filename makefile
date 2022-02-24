@@ -10,10 +10,14 @@
 # OPTFLAGS = -Ofast -flto
 
 all: 
-	g++ -std=c++11 -Wall chess.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess
+	clang++ -std=c++11 -Wall main.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess
 
 release:
-	g++ -std=c++11 -O3 -flto chess.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess -Winline
+	clang++ -std=c++11 -O3 main.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess -Winline
+
+# Best for g++ compiler
+# release:
+# 	g++ -std=c++11 -O3 -flto main.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess -Winline
 
 
 # cppchess: chess.o position.o movegen.o
