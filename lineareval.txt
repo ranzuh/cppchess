@@ -1,0 +1,26 @@
+w			                  x
+
+piece values 6 or 5 	  white piece - black piece
+			
+pawn table 64 or 48 	  0 or 1 depending on if there is a piece
+
+knight table 64		      0 or 1 depending on if there is a piece
+
+bishop table 64		      0 or 1 depending on if there is a piece
+
+rook table 64		        0 or 1 depending on if there is a piece
+
+queen table 64		      0 or 1 depending on if there is a piece
+
+king table 64		        0 or 1 depending on if there is a piece
+
+pawn structures 4	      white pawn - black pawn in the structure
+
+rook bonus 3		        white rook - black rook in the structure
+
+
+380 parameters
+
+100, 350, 350, 525, 1000, pawntabl, knighttabl, bishoptabl, queentabl, kingtabl, -10, -20, -8, 20, 10, 15, 20
+
+
