@@ -1,10 +1,13 @@
 #include <numeric>
+#include <iostream>
+#include <fstream>
+#include "nlohmann/json.hpp"
 #include "position.h"
 
 // number of features == number of weights
 const int num_features = 380;
 
-int weights[] {
+double weights[] {
 100, 350, 350, 525, 1000,
 
 //0,  0,  0,  0,  0,  0,  0,  0,
@@ -67,6 +70,23 @@ int weights[] {
 // from evaluation.cpp
 extern int mirror_square[];
 extern int pawn_rank[2][10];
+
+void init_weights_from_json() {
+    // read a JSON file
+    std::ifstream i("weights.json");
+    nlohmann::json j;
+    i >> j;
+    // copy weights from json object to weights array
+    std::copy(j["weights"].begin(), j["weights"].end(), weights);
+}
+
+void save_weights_to_json() {
+    nlohmann::json j;
+    j["weights"] = weights;
+    // write JSON to weights.json
+    std::ofstream o("weights.json");
+    o << std::setw(4) << j << std::endl;
+}
 
 // map square in 0..127 -> 0..63
 inline int get_square_in_64(int square) {
@@ -315,8 +335,8 @@ void extract_features(Position &pos, int features[]) {
     }
 }
 
-int evaluate_features(Position &pos, int features[]) {
-    int score = std::inner_product(features, features + num_features, weights, 0);
+double evaluate_features(Position &pos, int features[]) {
+    double score = std::inner_product(features, features + num_features, weights, 0);
     return pos.side == white ? score : -score;
 }
 
