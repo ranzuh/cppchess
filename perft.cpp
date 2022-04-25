@@ -1,8 +1,11 @@
 #include <iostream>
 #include <chrono>
-#include <cassert>
+#include <assert.h>
+#include <numeric>
 #include "position.h"
 #include "movegen.h"
+#include "evaluation.h"
+#include "linear_evaluation.h"
 
 using namespace std;
 
@@ -23,7 +26,30 @@ using namespace std;
 
 // perft test
 uint64_t perft(Position &pos, int depth, bool divide) {
-    if (depth == 0) return 1;
+    if (depth == 0) {
+        //int score = evaluate_position(pos);
+        int score2 = linear_evaluate_position(pos);
+        // std::cout << "eval old " << score << std::endl;
+        // std::cout << "eval new " << score2 << std::endl;
+        // pos.print_board();
+        //assert(score == score2);
+        
+        
+        //int eval2_score = eval2(features, weights2, std::size(features));
+        // if (!(score == (pos.side == white ? eval2_score : -eval2_score))) {
+        //     std::cout << "eval old " << score << std::endl;
+        //     std::cout << "eval old features " << eval2_score << std::endl;
+        //     pos.print_board();
+        //     for (size_t i = 0; i < 380; i++)
+        //     {
+        //         std::cout << features[i] << " ";
+        //         if (i == 4) std::cout << std::endl;
+        //         if (i > 4 && (i+4) % 8 == 0) std::cout << std::endl;
+        //     }
+        // }
+        // assert(score == (pos.side == white ? eval2_score : -eval2_score));
+        return 1;
+    } 
     Movelist moves;
     //int n_moves;
     uint64_t nodes = 0;

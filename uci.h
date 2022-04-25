@@ -11,6 +11,7 @@ extern int time_left;
 
 void uci_loop();
 int parse_move(Position &pos, string move_string);
+void parse_position(Position &pos, string command);
 void check_time();
 
 #endif
