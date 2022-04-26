@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cassert>
 #include <cstring>
+#include <vector>
 #include "position.h"
 #include "movegen.h"
 #include "hashtable.h"
@@ -503,6 +504,8 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
 int aspiration_window = 50;
 
+std::vector<Position> pv_leaf_positions;
+
 // search position for the best move
 void search_position(Position &pos, int depth) {
     // clear hash table, good idea or not?
@@ -574,5 +577,18 @@ void search_position(Position &pos, int depth) {
         }
         
     }
+    // store leaf node of pv
+    Position copy = pos;
+
+    for (int i = 0; i < pv_length[0]; i++) {
+        cout << get_move_string(pv_table[0][i]) << " " << flush;
+        assert(get_move_string(pv_table[0][i]) != "a8a8");
+        copy.make_move(pv_table[0][i], 0);
+    }
+    cout << endl;
+    copy.print_board();
+    copy.print_board_stats();
+    pv_leaf_positions.push_back(copy);
+    cout << pv_leaf_positions.size() << endl;
     cout << "bestmove " << get_move_string(pv_table[0][0]) << endl; 
 }
