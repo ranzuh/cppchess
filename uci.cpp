@@ -227,6 +227,21 @@ void parse_go(Position &pos, string command) {
     search_position(pos, depth);
 }
 
+// parse game result for training, not part of UCI protocol
+void parse_result(Position &pos, string command) {
+    if (command.find("1/2-1/2") != string::npos) {
+        cout << 0 << endl;
+    }
+    else if (command.find("1-0") != string::npos) {
+        if (pos.side == white) cout << 1 << endl;
+        else cout << -1 << endl;
+    }
+    else if (command.find("0-1") != string::npos) {
+        if (pos.side == white) cout << -1 << endl;
+        else cout << 1 << endl;
+    }
+}
+
 /*
     GUI -> isready
     Engine -> readyok
@@ -282,6 +297,12 @@ void uci_loop() {
         // parse UCI "go" command
         else if (input.find("go") != string::npos) {
             parse_go(pos, input);
+            //continue;
+        }
+
+        // parse custom "result" command
+        else if (input.find("result") != string::npos) {
+            parse_result(pos, input);
             //continue;
         }
         
