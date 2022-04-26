@@ -345,3 +345,36 @@ int linear_evaluate_position(Position &pos) {
     extract_features(pos, features);
     return evaluate_features(pos, features);
 }
+
+void print_features(int features[]) {
+    string names[] = {
+                "material",
+                "pawn table",
+                "knight table",
+                "bishop table",
+                "rook table",
+                "queen table",
+                "king table",
+                "pawn/rook structures",
+            };
+
+    int j = 0;
+    // loop through features
+    for (int i = 0; i < 380; i++)
+    {
+
+        if (i == 0 || i == 5 || i == 53) {
+            std::cout << names[j] << endl;
+            j++;
+        }
+        if (i > 53 && (i-5+16) % 64 == 0) {
+            std::cout << names[j] << endl;
+            j++;
+        }
+        std::cout << features[i] << " ";
+        if (i == 4) std::cout << std::endl;
+        if (i > 4 && (i+4) % 8 == 0) std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+}
