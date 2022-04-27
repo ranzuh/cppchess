@@ -12,7 +12,7 @@ extern uint64_t quiesc_nodes;
 extern int table_hits;
 extern int ply;
 
-void search_position(Position &pos, int depth);
+int search_position(Position &pos, int depth, bool print=true);
 
 
 #endif

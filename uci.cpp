@@ -5,6 +5,7 @@
 #include "movegen.h"
 #include "uci.h"
 #include "hashtable.h"
+#include "search.h"
 
 ////////////
 //  UCI   //
@@ -130,7 +131,7 @@ void parse_position(Position &pos, string command) {
     go depth 64
 */
 
-void search_position(Position &pos, int depth);
+// void search_position(Position &pos, int depth);
 
 int time_set = 0;
 chrono::steady_clock::time_point stop_time;
@@ -156,7 +157,7 @@ void check_time() {
 }
 
 // parse UCI "go" command
-void parse_go(Position &pos, string command) {
+int parse_go(Position &pos, string command, bool print) {
     int depth = -1;
 
     reset_time_control();
@@ -193,7 +194,7 @@ void parse_go(Position &pos, string command) {
         string movetime_string = moves_substring.substr(0, moves_substring.find(" "));
         move_time = stoi(movetime_string);
         time_left = move_time;
-        cout << "move_time: " << move_time << endl;
+        //cout << "move_time: " << move_time << endl;
     }
 
     if (time_left != -1) {
@@ -224,7 +225,7 @@ void parse_go(Position &pos, string command) {
     }
 
     // search position
-    search_position(pos, depth);
+    return search_position(pos, depth, print);
 }
 
 /*

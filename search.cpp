@@ -504,7 +504,7 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 int aspiration_window = 50;
 
 // search position for the best move
-void search_position(Position &pos, int depth) {
+int search_position(Position &pos, int depth, bool print) {
     // clear hash table, good idea or not?
     //clear_hash_table();
 
@@ -559,6 +559,7 @@ void search_position(Position &pos, int depth) {
             auto stop = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 
+            if (print) {
             if (score > -mate_value && score < -mate_score)
                 cout << "info depth " << current_depth << " score mate " << -(score + mate_value) / 2 - 1 << " nodes " << nodes << " nps " << uint64_t(1000000.0 * nodes / duration.count()) << " pv ";
             else if (score > mate_score && score < mate_value)
@@ -571,8 +572,10 @@ void search_position(Position &pos, int depth) {
                 assert(get_move_string(pv_table[0][i]) != "a8a8");
             }
             cout << endl;
+            }
         }
         
     }
-    cout << "bestmove " << get_move_string(pv_table[0][0]) << endl; 
+    if (print) cout << "bestmove " << get_move_string(pv_table[0][0]) << endl;
+    return pv_table[0][0];
 }

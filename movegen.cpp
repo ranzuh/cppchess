@@ -726,3 +726,44 @@ string get_move_string(int move) {
     }
     return move_string;
 }
+
+/* Get pseudo san formatted string
+Does not mark + for check or # for checkmate
+Also doesnt mark if two same type of pieces can move to same square
+Promotion part is not correct
+*/
+string get_san_string(Position &pos, int move) {
+    string move_string = "";
+    int piece = pos.board[decode_source(move)];
+    if (piece != p && piece != P) {
+        move_string += ".PNBRQKPNBRQKo"[piece];
+    }
+    if (decode_capture(move)) {
+        if (piece == p || piece == P) {
+            move_string += pos.square_to_coord[decode_source(move)][0];
+        }
+        move_string += "x";
+    }
+    move_string += Position::square_to_coord[decode_target(move)];
+    
+    
+    if (decode_promotion(move)) {
+        int promoted_piece = decode_promotion(move);
+        // promoted to queen
+        if ((promoted_piece == Q || promoted_piece == q))
+            move_string += 'q';
+        
+        // promoted to rook
+        else if ((promoted_piece == R || promoted_piece == r))
+            move_string += 'r';
+        
+        // promoted to bishop
+        else if ((promoted_piece == B || promoted_piece == b))
+            move_string += 'b';
+        
+        // promoted to knight
+        else if ((promoted_piece == N || promoted_piece == n))
+            move_string += 'n';
+    }
+    return move_string;
+}

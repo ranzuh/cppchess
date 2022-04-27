@@ -91,5 +91,6 @@ int generate_legal_moves(Position &pos, Movelist &moves);
 void print_movelist(Movelist &moves);
 int is_square_attacked(Position &pos, int square, int side);
 string get_move_string(int move);
+string get_san_string(Position &pos, int move);
 
 #endif

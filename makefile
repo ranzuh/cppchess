@@ -15,6 +15,9 @@ all:
 release:
 	clang++ -std=c++11 -O3 main.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess -Winline
 
+test:
+	clang++ -std=c++11 -Wall test_suite.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess
+
 # Best for g++ compiler
 # release:
 # 	g++ -std=c++11 -O3 -flto main.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp -o cppchess -Winline
