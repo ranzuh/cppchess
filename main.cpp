@@ -1,11 +1,13 @@
 #include <iostream>
 #include <chrono>
+#include <vector>
 #include "position.h"
 #include "hashtable.h"
 #include "uci.h"
 #include "search.h"
 #include "perft.h"
 #include "linear_evaluation.h"
+#include "tdleaf.h"
 
 using namespace std;
 
@@ -17,7 +19,7 @@ int main() {
     Position game_position;
     clear_hash_table();
 
-    int debug = 1;
+    int debug = 0;
 
     if (debug) {
         game_position.parse_fen(start_position);
@@ -40,29 +42,10 @@ int main() {
         // cout << "Table hits:              " << table_hits << endl;
 		
         init_weights_from_json();
-        extern double weights[380];
+        //extern double weights[380];
 
-        Position pos1;
-        parse_position(pos1, "position moves e2e4 b8c6");
-        Position pos2;
-        parse_position(pos2, "position moves e2e4 b8c6 d2d4 g8f6 b1c3 d7d5 e4e5 f6e4 g1e2 c8f5");
 
-        double eval2 = linear_evaluate_position(pos2);
-
-        int features[380] = {0};
-        extract_features(pos1, features);
-
-        double eval1 = evaluate_features(pos1, features);
-
-        cout << "eval1 " << eval1 << endl;
-        cout << "eval2 " << eval2 << endl;
-
-        double diff = eval2 - eval1;
-
-        cout << "diff " << diff << endl;
-
-        print_features(features);
-
+        
 
         // weights[0] = 101;
         // save_weights_to_json();

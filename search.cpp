@@ -579,16 +579,16 @@ void search_position(Position &pos, int depth) {
     }
     // store leaf node of pv
     Position copy = pos;
-
+    cout << pv_length[0] << endl;
     for (int i = 0; i < pv_length[0]; i++) {
-        cout << get_move_string(pv_table[0][i]) << " " << flush;
+        //cout << get_move_string(pv_table[0][i]) << " " << flush;
         assert(get_move_string(pv_table[0][i]) != "a8a8");
         copy.make_move(pv_table[0][i], 0);
     }
     cout << endl;
-    copy.print_board();
-    copy.print_board_stats();
+    //copy.print_board();
+    //copy.print_board_stats();
     pv_leaf_positions.push_back(copy);
-    cout << pv_leaf_positions.size() << endl;
+    //cout << pv_leaf_positions.size() << endl;
     cout << "bestmove " << get_move_string(pv_table[0][0]) << endl; 
 }

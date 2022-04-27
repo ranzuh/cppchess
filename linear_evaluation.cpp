@@ -7,7 +7,9 @@
 // number of features == number of weights
 const int num_features = 380;
 
-double weights[] {
+typedef vector<double> dvector; 
+
+dvector weights {
 100, 350, 350, 525, 1000,
 
 //0,  0,  0,  0,  0,  0,  0,  0,
@@ -77,7 +79,7 @@ void init_weights_from_json() {
     nlohmann::json j;
     i >> j;
     // copy weights from json object to weights array
-    std::copy(j["weights"].begin(), j["weights"].end(), weights);
+    std::copy(j["weights"].begin(), j["weights"].end(), weights.begin());
 }
 
 void save_weights_to_json() {
@@ -94,7 +96,7 @@ inline int get_square_in_64(int square) {
 }
 
 // evaluate white pawn structures
-void eval_white_pawn(int square, int rank, int file, int arr[]) {
+void eval_white_pawn(int square, int rank, int file, dvector &arr) {
     //int score = 0;
 
     // increment file (remember I used 0..9 files)
@@ -130,7 +132,7 @@ void eval_white_pawn(int square, int rank, int file, int arr[]) {
 }
 
 // evaluate white pawn structures
-void eval_black_pawn(int square, int rank, int file, int arr[]) {
+void eval_black_pawn(int square, int rank, int file, dvector &arr) {
     //int score = 0;
 
     // increment file (remember I used 0..9 files)
@@ -163,7 +165,7 @@ void eval_black_pawn(int square, int rank, int file, int arr[]) {
 }
 
 // evaluate whites rook
-void evaluate_white_rook(int rank, int file, int arr[]) {
+void evaluate_white_rook(int rank, int file, dvector &arr) {
     //int score = 0;
 
     // check if there is black pawn on same file as the rook
@@ -189,7 +191,7 @@ void evaluate_white_rook(int rank, int file, int arr[]) {
 }
 
 // evaluate blacks rook
-void evaluate_black_rook(int rank, int file, int arr[]) {
+void evaluate_black_rook(int rank, int file, dvector &arr) {
     //int score = 0;
 
     // check if there is white pawn on same file as the rook
@@ -216,7 +218,7 @@ void evaluate_black_rook(int rank, int file, int arr[]) {
 
 /* evaluate position based on material, piece-square tables and
    basic pawn structures */
-void extract_features(Position &pos, int features[]) {
+void extract_features(Position &pos, dvector &features) {
 	int file, rank;
 	//int score = 0;
     int square;
@@ -335,18 +337,7 @@ void extract_features(Position &pos, int features[]) {
     }
 }
 
-double evaluate_features(Position &pos, int features[]) {
-    double score = std::inner_product(features, features + num_features, weights, 0);
-    return pos.side == white ? score : -score;
-}
-
-int linear_evaluate_position(Position &pos) {
-    int features[num_features] = {0};
-    extract_features(pos, features);
-    return evaluate_features(pos, features);
-}
-
-void print_features(int features[]) {
+void print_features(dvector &features) {
     string names[] = {
                 "material",
                 "pawn table",
@@ -378,3 +369,19 @@ void print_features(int features[]) {
     std::cout << std::endl;
 
 }
+
+double evaluate_features(Position &pos, dvector &features) {
+    double score = std::inner_product(features.begin(), features.end(), weights.begin(), 0);
+    //print_features(features);
+    //pos.print_board();
+    //pos.print_board_stats();
+    return pos.side == white ? score : -score;
+}
+
+double linear_evaluate_position(Position &pos) {
+    dvector features(380, 0.0);
+    extract_features(pos, features);
+    return evaluate_features(pos, features);
+}
+
+
