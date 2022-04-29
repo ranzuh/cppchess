@@ -3,6 +3,7 @@
 #include <fstream>
 #include "nlohmann/json.hpp"
 #include "position.h"
+#include "dvector.h"
 
 // number of features == number of weights
 const int num_features = 380;
@@ -218,11 +219,13 @@ void evaluate_black_rook(int rank, int file, dvector &arr) {
 
 /* evaluate position based on material, piece-square tables and
    basic pawn structures */
-void extract_features(Position &pos, dvector &features) {
+dvector extract_features(Position &pos) {
 	int file, rank;
 	//int score = 0;
     int square;
     int piece;
+
+    dvector features(380, 0.0);
 
 	/* first store least advanced pawns on every file */
 
@@ -315,7 +318,7 @@ void extract_features(Position &pos, dvector &features) {
                     break;
                 case r:
                     //score -= rook_table[mirror_square[get_square_in_64(square)]];
-                   evaluate_black_rook(rank, file, features);
+                    evaluate_black_rook(rank, file, features);
                     features[3]--;
                     features[181 + mirror_square[get_square_in_64(square)]]--;
                     break;
@@ -335,6 +338,7 @@ void extract_features(Position &pos, dvector &features) {
             }
         }
     }
+    return features;
 }
 
 void print_features(dvector &features) {
@@ -370,18 +374,17 @@ void print_features(dvector &features) {
 
 }
 
-double evaluate_features(Position &pos, dvector &features) {
+double evaluate_features(Position &pos, dvector &features, int side) {
     double score = std::inner_product(features.begin(), features.end(), weights.begin(), 0);
     //print_features(features);
     //pos.print_board();
     //pos.print_board_stats();
-    return pos.side == white ? score : -score;
+    return side == white ? score : -score;
 }
 
-double linear_evaluate_position(Position &pos) {
-    dvector features(380, 0.0);
-    extract_features(pos, features);
-    return evaluate_features(pos, features);
+double linear_evaluate_position(Position &pos, int side) {
+    dvector features = extract_features(pos);
+    return evaluate_features(pos, features, side);
 }
 
 

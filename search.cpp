@@ -9,6 +9,7 @@
 #include <numeric>
 #include "search.h"
 #include "uci.h"
+#include "linear_evaluation.h"
 
 
 /*
@@ -225,7 +226,7 @@ int quiescence_search(Position &pos, int alpha, int beta) {
     pv_length[ply] = ply;
 
     // get lower bound score
-    int stand_pat = evaluate_position(pos);
+    int stand_pat = linear_evaluate_position(pos, pos.side);
 
     // ensure no overflow of arrays depending on max_depth
     if (ply > max_depth - 1) {
@@ -365,7 +366,7 @@ int negamax(Position &pos, int depth, int alpha, int beta, bool null_move) {
 
     // ensure no overflow of arrays depending on max_depth
     if (ply > max_depth - 1) {
-        value = evaluate_position(pos);
+        value = linear_evaluate_position(pos, pos.side);
         return value;
     }
 
@@ -535,6 +536,9 @@ void search_position(Position &pos, int depth) {
     int alpha = -infinity;
     int beta = infinity;
 
+    vector<int> last_pv;
+    pv_leaf_positions.clear();
+
     // iterative deepening
     for (int current_depth = 1; current_depth <= depth; current_depth++) {
         
@@ -558,6 +562,7 @@ void search_position(Position &pos, int depth) {
         beta = score + aspiration_window;
 
         if (!stopped) {
+            last_pv.clear();
             // stop clock
             auto stop = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
@@ -572,6 +577,7 @@ void search_position(Position &pos, int depth) {
             for (int i = 0; i < pv_length[0]; i++) {
                 cout << get_move_string(pv_table[0][i]) << " " << flush;
                 assert(get_move_string(pv_table[0][i]) != "a8a8");
+                last_pv.push_back(pv_table[0][i]);
             }
             cout << endl;
         }
@@ -579,16 +585,15 @@ void search_position(Position &pos, int depth) {
     }
     // store leaf node of pv
     Position copy = pos;
-    cout << pv_length[0] << endl;
-    for (int i = 0; i < pv_length[0]; i++) {
-        //cout << get_move_string(pv_table[0][i]) << " " << flush;
-        assert(get_move_string(pv_table[0][i]) != "a8a8");
-        copy.make_move(pv_table[0][i], 0);
+
+    for (auto move : last_pv) {
+        //cout << get_move_string(move) << " " << flush;
+        assert(get_move_string(move) != "a8a8");
+        copy.make_move(move, 0);
     }
-    cout << endl;
+    //cout << endl;
     //copy.print_board();
     //copy.print_board_stats();
     pv_leaf_positions.push_back(copy);
-    //cout << pv_leaf_positions.size() << endl;
     cout << "bestmove " << get_move_string(pv_table[0][0]) << endl; 
 }

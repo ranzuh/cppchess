@@ -19,7 +19,7 @@ int main() {
     Position game_position;
     clear_hash_table();
 
-    int debug = 0;
+    int debug = 1;
 
     if (debug) {
         game_position.parse_fen(start_position);
@@ -32,35 +32,25 @@ int main() {
         // game_position.print_board();
         // game_position.print_board_stats();
 
-        // time_set = 1;
-        // auto start_time = chrono::steady_clock::now();
-        // auto move_time_chrono = chrono::milliseconds(15000);
-        // stop_time = start_time + move_time_chrono;
-
         // search_position(game_position, 20);
         // cout << "Quiescence search nodes: " << quiesc_nodes << endl;
         // cout << "Table hits:              " << table_hits << endl;
 		
-        init_weights_from_json();
+        //init_weights_from_json();
         //extern double weights[380];
 
+
+        // parse_position(game_position, "moves e2e4 b8c6 d2d4 g8f6 b1c3 d7d5 e4e5 c8g4 g1e2");
+        // game_position.print_board();
+        // cout << linear_evaluate_position(game_position, white) << endl;
+
+        run_perft_tests();
 
         
 
         // weights[0] = 101;
         // save_weights_to_json();
 
-
-
-        // int asd = 1;
-
-        // int features[380] = {0};
-        // extract_features(game_position, features);
-        // double score = evaluate_features(game_position, features);
-        // std::cout << "eval " << score << std::endl;
-        // std::cout.precision(std::numeric_limits<double>::max_digits10 - 1);
-        // std::cout << std::scientific << asd * 1.01 << '\n';
-		// run_perft_tests();
 		//run_perft(game_position, 1);
 
 		// game_position.make_move(encode_move(e2, a6, 0, 1, 0, 0, 0), 10);

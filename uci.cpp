@@ -5,6 +5,7 @@
 #include "movegen.h"
 #include "uci.h"
 #include "hashtable.h"
+#include "linear_evaluation.h"
 #include "tdleaf.h"
 
 ////////////
@@ -236,14 +237,15 @@ void parse_result(Position &pos, string command) {
     }
     else if (command.find("1-0") != string::npos) {
         if (pos.side == white) result = 1;
-        else result -1;
+        else result = -1;
     }
     else if (command.find("0-1") != string::npos) {
         if (pos.side == white) result = -1;
         else result = 1;
     }
     extern std::vector<Position> pv_leaf_positions;
-    train(pv_leaf_positions, result);
+    train(pv_leaf_positions, result, pos.side);
+    save_weights_to_json();
 }
 
 /*
@@ -257,6 +259,7 @@ void uci_loop() {
     // setbuf(stdout, NULL);
     Position pos;
     clear_hash_table();
+    init_weights_from_json();
 
     cout << "id name cppchess" << endl;
     cout << "id author Eetu Rantala" << endl;

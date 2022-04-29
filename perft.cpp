@@ -6,6 +6,7 @@
 #include "movegen.h"
 #include "evaluation.h"
 #include "linear_evaluation.h"
+#include "dvector.h"
 
 using namespace std;
 
@@ -28,10 +29,17 @@ using namespace std;
 uint64_t perft(Position &pos, int depth, bool divide) {
     if (depth == 0) {
         // int score = evaluate_position(pos);
-        // int score2 = linear_evaluate_position(pos);
+        // int score2 = linear_evaluate_position(pos, pos.side);
         // std::cout << "eval old " << score << std::endl;
         // std::cout << "eval new " << score2 << std::endl;
-        // pos.print_board();
+        // if (score != score2) {
+        //     pos.print_board();
+        //     dvector feats = extract_features(pos);
+        //     print_features(feats);
+        //     extern dvector weights;
+        //     print_vector(weights);
+        // }
+        
         // assert(score == score2);
         return 1;
     } 

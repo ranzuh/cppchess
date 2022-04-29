@@ -3,8 +3,8 @@ CXXFLAGS = -std=c++11 -Wall
 CXXRELEASE = -std=c++11 -O3 -Winline
 EXECUTABLE = cppchess
 
-OBJECTS = main.o position.o movegen.o hashtable.o uci.o search.o evaluation.o perft.o linear_evaluation.o tdleaf.o
-SOURCES = main.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp linear_evaluation.cpp tdleaf.cpp
+OBJECTS = main.o position.o movegen.o hashtable.o uci.o search.o evaluation.o perft.o linear_evaluation.o tdleaf.o dvector.o
+SOURCES = main.cpp position.cpp movegen.cpp hashtable.cpp uci.cpp search.cpp evaluation.cpp perft.cpp linear_evaluation.cpp tdleaf.cpp dvector.cpp
 
 main: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(EXECUTABLE) $^
