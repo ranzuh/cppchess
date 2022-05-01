@@ -11,7 +11,9 @@ extern dvector weights;
 void train(vector<Position> leaf_positions, int result, int side) {
     // setup stepsize alpha and vector delta to hold the changes to weights
     double alpha = 0.01;
+    double lambda = 0.7;
     dvector delta(380, 0.0);
+    dvector trace(380, 0.0);
 
     // loop through PV leaf positions
     for(int i = 0; i < leaf_positions.size(); i++) {
@@ -32,12 +34,15 @@ void train(vector<Position> leaf_positions, int result, int side) {
         cout << "eval " << eval_state << endl;
         cout << "evalnext " << eval_next << endl;
 
+        // increment eligibility trace
+        trace = vector_add(vector_scale(trace, lambda), features);
+
         // calculate temporal difference
         double td = eval_next - eval_state;
         cout << "td " << td << endl;
 
-        // add gradient scaled by temporal difference to weight delta
-        delta = vector_add(delta, vector_scale(features, td));
+        // add trace scaled by temporal difference to weight vector delta
+        delta = vector_add(delta, vector_scale(trace, td));
     }
 
     // scale delta with stepsize alpha

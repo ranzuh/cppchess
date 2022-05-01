@@ -19,7 +19,7 @@ int main() {
     Position game_position;
     clear_hash_table();
 
-    int debug = 1;
+    int debug = 0;
 
     if (debug) {
         game_position.parse_fen(start_position);
