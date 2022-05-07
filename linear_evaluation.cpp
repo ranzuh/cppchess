@@ -374,17 +374,18 @@ void print_features(dvector &features) {
 
 }
 
-double evaluate_features(Position &pos, dvector &features, int side) {
-    double score = std::inner_product(features.begin(), features.end(), weights.begin(), 0);
+double evaluate_features(Position &pos, dvector &features) {
+    double score = std::inner_product(features.begin(), features.end(), weights.begin(), 0.0);
     //print_features(features);
     //pos.print_board();
     //pos.print_board_stats();
-    return side == white ? score : -score;
+    return score;
 }
 
 double linear_evaluate_position(Position &pos, int side) {
     dvector features = extract_features(pos);
-    return evaluate_features(pos, features, side);
+    double score = evaluate_features(pos, features);
+    return side == white ? score : -score;
 }
 
 

@@ -537,7 +537,6 @@ void search_position(Position &pos, int depth) {
     int beta = infinity;
 
     vector<int> last_pv;
-    pv_leaf_positions.clear();
 
     // iterative deepening
     for (int current_depth = 1; current_depth <= depth; current_depth++) {
@@ -585,7 +584,7 @@ void search_position(Position &pos, int depth) {
     }
     // store leaf node of pv
     Position copy = pos;
-
+    cout << "leafs: " << pv_leaf_positions.size() << endl;
     for (auto move : last_pv) {
         //cout << get_move_string(move) << " " << flush;
         assert(get_move_string(move) != "a8a8");

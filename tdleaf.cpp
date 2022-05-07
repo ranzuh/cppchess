@@ -10,7 +10,7 @@ extern dvector weights;
 
 void train(vector<Position> leaf_positions, int result, int side) {
     // setup stepsize alpha and vector delta to hold the changes to weights
-    double alpha = 0.01;
+    double alpha = 0.0005;
     double lambda = 0.7;
     dvector delta(380, 0.0);
     dvector trace(380, 0.0);
@@ -21,21 +21,25 @@ void train(vector<Position> leaf_positions, int result, int side) {
         dvector features = extract_features(leaf_positions[i]);
 
         // eval current state with features
-        double eval_state = evaluate_features(leaf_positions[i], features, side);
+        double eval_state = evaluate_features(leaf_positions[i], features);
 
         // eval next state. If its terminal its eval is the reward or matescore etc.
         double eval_next = 0.0;
         if (i == leaf_positions.size()-1) {
-            eval_next = result * 2000;
+            //eval_next = result * 2000;
+            eval_next = eval_state;
         }
         else {
-            eval_next = linear_evaluate_position(leaf_positions[i+1], side);
+            dvector features_next = extract_features(leaf_positions[i+1]);
+            eval_next = evaluate_features(leaf_positions[i+1], features_next);
         }
         cout << "eval " << eval_state << endl;
         cout << "evalnext " << eval_next << endl;
 
         // increment eligibility trace
         trace = vector_add(vector_scale(trace, lambda), features);
+        cout << "trace" << endl;
+        print_vector(trace);
 
         // calculate temporal difference
         double td = eval_next - eval_state;

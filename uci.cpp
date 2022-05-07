@@ -229,6 +229,8 @@ void parse_go(Position &pos, string command) {
     search_position(pos, depth);
 }
 
+extern std::vector<Position> pv_leaf_positions;
+
 // parse game result for training, not part of UCI protocol
 void parse_result(Position &pos, string command) {
     int result = 0;
@@ -236,15 +238,13 @@ void parse_result(Position &pos, string command) {
         result = 0;
     }
     else if (command.find("1-0") != string::npos) {
-        if (pos.side == white) result = 1;
-        else result = -1;
+        result = 1;
     }
     else if (command.find("0-1") != string::npos) {
-        if (pos.side == white) result = -1;
-        else result = 1;
+        result = -1;
     }
-    extern std::vector<Position> pv_leaf_positions;
     train(pv_leaf_positions, result, pos.side);
+    pv_leaf_positions.clear();
     save_weights_to_json();
 }
 
